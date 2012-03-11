@@ -1,0 +1,42 @@
+<?php
+
+/**
+ * List of files that will be ignored by the parser
+ */
+$ignoreFiles = array(
+    'function.require.html',
+    'xmlreader.installation.html',
+    'xmlreader.setup.html',
+    'xmlreader.requirements.html',
+    'function.include-once.html',
+    'xmlreader.configuration.html',
+    'function.require-once.html',
+    'function.return.html',
+    'xmlreader.resources.html',
+    'function.include.html',
+    'datetime.configuration.html',
+    'datetime.formats.time.html',
+    'datetime.formats.date.html',
+    'datetime.formats.relative.html',
+    'datetime.installation.html',
+    'datetime.formats.compound.html',
+    'datetime.requirements.html',
+    'datetime.resources.html',
+    'datetime.setup.html',
+    'datetime.constants.html',
+    'mysqli.configuration.html',
+    'mysqli.constants.html',
+    'mysqli.installation.html',
+    'mysqli.resources.html',
+    'mysqli.requirements.html',
+    'mysqli.setup.html',
+    'mysqli.summary.html',
+    'mysqli.persistconns.html',
+    'sqlite3.installation.html',
+    'sqlite3.setup.html',
+    'sqlite3.requirements.html',
+    'sqlite3.resources.html',
+    'sqlite3.configuration.html',
+    //'control-structures.alternative-syntax.html',
+    //'control-structures.intro.html',
+);
