@@ -13,7 +13,7 @@ php parse.php doc_dir output_dir [--export-examples|--join-examples]
 Where:
 doc_dir    - path to "Many HTML files" documentation (http://www.php.net/download-docs.php)
 output_dir - directory with generated JSON files
---export-examples (optional) - Export all code snippets to an extra json examples.json.
+--export-examples (optional) - Export all code snippets to an extra file examples.json.
 --join-examples   (optional) - Include all code snippets in the database.json file.
 
 EOS;
