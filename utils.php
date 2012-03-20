@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * Replaces all occurences of new lines and multiple whitespaces with single whitespace
+ *
+ * @param string $str String to be proccessed
+ * @return string String with only one whitespaces
+ */
 function simplify_string($str) {
     $str = preg_replace(array("/\n+/", "/ {2,}/"), ' ', $str);
     $str = trim($str);

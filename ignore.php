@@ -24,6 +24,7 @@ $ignoreFiles = array(
     'datetime.resources.html',
     'datetime.setup.html',
     'datetime.constants.html',
+    'mysqli.overview.html',
     'mysqli.configuration.html',
     'mysqli.constants.html',
     'mysqli.installation.html',

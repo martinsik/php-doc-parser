@@ -78,14 +78,11 @@ $classes = array();
 $functionsNames = array();
 
 if ($handle = opendir($dir)) {
-    //$index = 0;
+
     while (false !== ($file = readdir($handle))) {
         // filename starts with one of the selected categories
         if (in_array(substr($file, 0, strpos($file, '.')), $groups) && !in_array($file, $ignoreFiles)) {
             
-            //echo substr($file, 0, strpos($file, '.')) . "\n";
-            
-            //echo "$file\n";
             $dom = new DOMDocument();
             @$dom->loadHTML(file_get_contents($dir . '/' . $file));
             // Most important object used to traverse HTML DOM structure
@@ -95,12 +92,13 @@ if ($handle = opendir($dir)) {
             
             // function description
             $description = $xpath->query('//span[@class="dc-title"]');
-            if ($description->length > 0) { // some functions/methods don't have any description
+            if ($description->length > 0) { // some functions don't have any description
                 $function['desc'] = simplify_string($xpath->query('//span[@class="dc-title"]')->item(0)->textContent);
             } else {
                 $function['desc'] = null;
             }
             
+            // PHP version since this function is available
             $version = $xpath->query('//p[@class="verinfo"]');
             if ($version->length > 0) { // check from which PHP version is it available
                 $function['ver'] = trim($version->item(0)->textContent, '()');
@@ -122,6 +120,7 @@ if ($handle = opendir($dir)) {
             if ($seeAlso->length > 0) {
                 $lis = $xpath->query('.//li', $seeAlso->item(0));
                 foreach ($lis as $li) {
+                    // store just the name and description without parenthesis
                     $text = explode('-', $li->textContent);
                     $name = rtrim(trim($text[0]), '()');
                     if (strpos($name, ' ') === false) {
@@ -140,19 +139,22 @@ if ($handle = opendir($dir)) {
             // function name
             $h1 = $xpath->query('//h1');
             if ($h1->length != 0) {
+                // make all function names consistent
                 $function['name'] = str_replace('->', '::', $h1->item(0)->textContent);
-                //$function['n'] = rewrite_names($function['n']);
-                //$function['n'] = substr($function['n'], strpos($function['n'], '::') + 2);
-                //$function['n'] = str_replace('->', '::', $function['n']
             }
             
             // check whether this function is part of a class
             if (is_class($function['name'])) {
+                // class name
                 $function['class'] = substr($function['name'], 0, strpos($function['name'], '::'));
                 $function['class'] = rewrite_names($function['class']);
+                // function name
                 $function['name'] = substr($function['name'], strpos($function['name'], '::') + 2);
                 
                 if (!in_array($function['class'], $classes)) {
+                    /**
+                     * @TODO: Distinguish classes and function in a different way
+                     */
                     $classes[strtolower($function['class'])] = array(
                         'name'   => $function['class'],
                         'class'  => $function['class'],
@@ -161,28 +163,18 @@ if ($handle = opendir($dir)) {
             } else {
                 $function['class'] = null;
             }
-            
-            if ($function['name'] == "Installing/Configuring") {
-                echo $file;exit;
-            }
-            
-            // description container
+
+            // parameter description container
             $descriptions = $xpath->query('//div[@class="methodsynopsis dc-description"]');
             foreach ($descriptions as $index => $description) {
-            //if ($description->length > 0) {
-                //if (!isset($function['n'])) {
-                    
-                $span = $xpath->query('./span[@class="type"]', $description);
 
                 // return value data type (boolean, integer, mixed, ... )
+                $span = $xpath->query('./span[@class="type"]', $description);
                 if ($span->length > 0 && !isset($function['return']['type'])) {
                     $function['return']['type'] = rewrite_names($span->item(0)->textContent);
                 }
 
-                //}
-                // index - json filename
-                
-                // parameters
+                // parameter
                 $params = $xpath->query('span[@class="methodparam"]', $description);
                 if ($params->length == 1 && $params->item(0)->textContent == 'void') {
                     $function['params'][$index] = null;
@@ -210,6 +202,7 @@ if ($handle = opendir($dir)) {
                     for ($i=0; $i < $paramDescription->length; $i++) {
                         // fetch for each parameter only paragraphs (sometimes it contains also tables, etc.)
                         $ps = $xpath->query('./p', $paramDescription->item($i));
+                        // ... and join them into one string
                         $desc = '';
                         for ($j=0; $j < $ps->length; $j++) {
                             $desc .= ' ' . $ps->item($j)->textContent;
@@ -218,32 +211,29 @@ if ($handle = opendir($dir)) {
                         $function['params_desc'][] = simplify_string($desc);
                     }
                 }
-                //print_r($function);exit;
-                
             }
             
-            
+            // proccess examples
             if ($processExamples) {
+                // check if there are any examples
                 $examplesCont = $xpath->query('//div[@class="refsect1 examples"]');
-                //echo $examplesCont->length . ',';
                 if ($examplesCont->length > 0) {
                     $examples = array();
+
+                    // one example
                     $exampleDiv = $xpath->query('div[@class="example"]', $examplesCont->item(0));
-                    //echo $exampleDiv->length . ',';
-                    
                     for ($i=0; $i < $exampleDiv->length; $i++) {
-                        //$sourceCode = $xpath->query('//div[@class="phpcode"]', $exampleDiv->item($i))->item(0);
                         $output = null;
+                        // get as pure text, without any syntax highlighting
                         $sourceCode = $dom->saveXML($xpath->query('.//div[@class="phpcode"]', $exampleDiv->item($i))->item(0));
                         $outputDiv = $xpath->query('.//div[@class="cdata"]', $exampleDiv->item($i));
                         if ($outputDiv->length > 0) {
                         	$output = $xpath->query('.//div[@class="cdata"]', $exampleDiv->item($i))->item(0)->textContent;
                         }
-                        //$output = $dom->saveXML($xpath->query('.//div[@class="cdata"]', $exampleDiv->item($i))->item(0));
-                        //var_dump(str_replace('<br />', "\n", $sourceCode));exit;
-                        // stript beginning and ending php tags
-                        //$sourceCode = trim(substr($sourceCode, 5, strlen($sourceCode) - 2));
+
+                        // code example title, stript beginning and ending php tags
                         $title = $xpath->query('p', $exampleDiv->item($i))->item(0)->textContent;
+                        // remove some unnecessary stuff
                         $title = trim(preg_replace('/^(Example #\d+|Beispiel #\d+|Exemplo #\d+|Exemple #\d+|Przykład #\d+)/', '', $title));
                         $title = trim(preg_replace('/\s+/', ' ', $title));
                         
@@ -253,8 +243,8 @@ if ($handle = opendir($dir)) {
                             'output' => $output ? clear_source_code($output) : null,
                         );
                     }
-                    //print_r($examples);
-                    
+
+                    // keep examples in a seperate array or put it among other function params
                     if ($processExamples == 'export') {
                         $exportExamples[$file] = $examples;
                     } elseif ($processExamples == 'join') {
@@ -265,28 +255,25 @@ if ($handle = opendir($dir)) {
                 
             }
             
-            
-            //echo strtolower($function['n']) . "\n";
+            // add function into the final list
             if (isset($function['name']) && $function['name']) {
-                //$functions[strtolower(str_replace('::', '_', $function['n']))] = $function;
                 $functions[$function['name']] = $function;
-                //$functionsNames[] = $function['name'];
             } else {
                 echo $file . ": no method name\n";
             }
-            //print_r($function);
             
         }
     }
     closedir($handle);
 }
 
-//print_r($classes);exit;
 $functions = array_merge($functions, $classes);
-$functions = array_merge($functions);
 
+// not necessary but it's easier to find buggy function manually
 ksort($functions);
 
+// traverse all function's "see also" and drop those function that were not parsed
+// (that are not included in the generated JSON output)
 foreach ($functions as &$function) {
     if ($function['seealso']) {
         foreach ($function['seealso'] as $i => $seealso) {
