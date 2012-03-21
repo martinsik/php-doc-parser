@@ -8,13 +8,14 @@ Parser generated one extra file stats.json with current timestamp and number
 of all methods and classes successfuly parsed and included in the database.json file.
 
 Usage:
-php parse.php doc_dir output_dir [--export-examples|--join-examples]
+php parse.php [--export-examples|--join-examples|--print-test=fn_name] doc_dir output_dir
 
 Where:
 doc_dir    - path to "Many HTML files" documentation (http://www.php.net/download-docs.php)
 output_dir - directory with generated JSON files
 --export-examples (optional) - Export all code snippets to an extra file examples.json.
 --join-examples   (optional) - Include all code snippets in the database.json file.
+--print-test=fn_name (optional) - Print test function (eg. to check bug fixes)
 
 EOS;
     exit;
@@ -47,8 +48,8 @@ require 'ignore.php';
  */
 require 'utils.php';
 
-$dir = $argv[1]; // input directory
-$outputDir = $argv[2]; // output directory
+$dir = $argv[$argc - 2]; // input directory
+$outputDir = $argv[$argc - 1]; // output directory
 if (!is_dir($outputDir)) {
     mkdir($outputDir);
 }
@@ -80,8 +81,10 @@ $functionsNames = array();
 if ($handle = opendir($dir)) {
 
     while (false !== ($file = readdir($handle))) {
+
         // filename starts with one of the selected categories
-        if (in_array(substr($file, 0, strpos($file, '.')), $groups) && !in_array($file, $ignoreFiles)) {
+        $fileGroup = substr($file, 0, strpos($file, '.'));
+        if (in_array($fileGroup, $groups) && !in_array($file, $ignoreFiles)) {
             
             $dom = new DOMDocument();
             @$dom->loadHTML(file_get_contents($dir . '/' . $file));
@@ -104,13 +107,10 @@ if ($handle = opendir($dir)) {
                 $function['ver'] = trim($version->item(0)->textContent, '()');
             }
             
-            // return value (consists of description and return data type)
-            $function['return'] = array();
-            
             // return value desription
             $items = $xpath->query('//div[@class="refsect1 returnvalues"]/p');
             if ($items->length > 0) {
-                $function['return']['desc'] = simplify_string($items->item(0)->textContent);
+                $function['ret_desc'] = simplify_string($items->item(0)->textContent);
             }
             // return value data type is parsed later...
 
@@ -164,53 +164,50 @@ if ($handle = opendir($dir)) {
                 $function['class'] = null;
             }
 
-            // parameter description container
-            $descriptions = $xpath->query('//div[@class="methodsynopsis dc-description"]');
-            foreach ($descriptions as $index => $description) {
+
+            // function description (parameters)
+            // Note: One function can have multiple parameter count (see http://www.php.net/manual/en/function.strtr.php)
+            $function['params'] = array();
+            $funcDescription = $xpath->query('//div[@class="methodsynopsis dc-description"]');
+            foreach ($funcDescription as $index => $description) {
+                $parsedParams = array('list' => array());
 
                 // return value data type (boolean, integer, mixed, ... )
                 $span = $xpath->query('./span[@class="type"]', $description);
                 if ($span->length > 0 && !isset($function['return']['type'])) {
-                    $function['return']['type'] = rewrite_names($span->item(0)->textContent);
+                    $parsedParams['ret_type'] = rewrite_names($span->item(0)->textContent);
                 }
 
-                // parameter
+                // parameter containers
                 $params = $xpath->query('span[@class="methodparam"]', $description);
-                if ($params->length == 1 && $params->item(0)->textContent == 'void') {
-                    $function['params'][$index] = null;
-                } else {
-                    $function['params'][$index] = array();
+                // skip empty parameter list (function declaration that doesn't take any parameter)
+                if ($params->length != 1 && $params->item(0)->textContent != 'void') {
                     $optional = substr_count($description->textContent, '[');
+                    $paramDescriptions = $xpath->query('//div[@class="refsect1 parameters"]//dd');
+
                     for ($i=0; $i < $params->length; $i++) {
-                        $param = $xpath->query('*', $params->item($i));
-                        
-                        $function['params'][$index][] = array(
-                            'type'  => $param->item(0)->textContent, // type
-                            'var'   => $param->length >= 2 ? $param->item(1)->textContent : false, // variable name
-                            'beh'   => $params->length - $optional > $i ? 0 : 1, // behaviour (0 = mandatory, 1 = optional)
-                        );
-                        if ($param->length >= 3) {
-                            $function['params'][$index][count($function['params'][$index]) - 1]['def'] = trim($param->item(2)->textContent, ' =');
-                        }
-                    }
-                }
-                
-                if ($function['params']) { // has parameters
-                    $function['params_desc'] = array(); // parameter descriptions
-                    // fetch parameter detail description
-                    $paramDescription = $xpath->query('//div[@class="refsect1 parameters"]//dd');
-                    for ($i=0; $i < $paramDescription->length; $i++) {
                         // fetch for each parameter only paragraphs (sometimes it contains also tables, etc.)
-                        $ps = $xpath->query('./p', $paramDescription->item($i));
-                        // ... and join them into one string
+                        $ps = $xpath->query('./p', $paramDescriptions->item($i));
+                        // ... and join them into a single string
                         $desc = '';
                         for ($j=0; $j < $ps->length; $j++) {
                             $desc .= ' ' . $ps->item($j)->textContent;
                         }
-                        
-                        $function['params_desc'][] = simplify_string($desc);
+
+                        $paramNodes = $xpath->query('*', $params->item($i));
+                        $param = array(
+                            'type'  => $paramNodes->item(0)->textContent, // type
+                            'var'   => $paramNodes->length >= 2 ? $paramNodes->item(1)->textContent : false, // variable name
+                            'beh'   => $paramNodes->length - $optional > $i ? 0 : 1, // behaviour (0 = mandatory, 1 = optional)
+                            'desc'  => simplify_string($desc),
+                        );
+                        if ($paramNodes->length >= 3) {
+                            $param['def'] = trim($paramNodes->item(2)->textContent, ' =');
+                        }
+                        $parsedParams['list'][] = $param;
                     }
                 }
+                $function['params'][] = $parsedParams;
             }
             
             // proccess examples
@@ -258,13 +255,17 @@ if ($handle = opendir($dir)) {
             // add function into the final list
             if (isset($function['name']) && $function['name']) {
                 $functions[$function['name']] = $function;
+                if (count($functions) % 100 == 0) {
+                    echo '.';
+                }
             } else {
                 echo $file . ": no method name\n";
             }
-            
         }
+
     }
     closedir($handle);
+    echo "\nparsing finished\n";
 }
 
 $functions = array_merge($functions, $classes);
@@ -272,12 +273,11 @@ $functions = array_merge($functions, $classes);
 // not necessary but it's easier to find buggy function manually
 ksort($functions);
 
-// traverse all function's "see also" and drop those function that were not parsed
+// traverse all function's "see also" and drop those references that were not parsed
 // (that are not included in the generated JSON output)
 foreach ($functions as &$function) {
     if ($function['seealso']) {
         foreach ($function['seealso'] as $i => $seealso) {
-            //if (!in_array($seealso['name'], $functionsNames)) {
             if (!isset($functions[$seealso['name']])) {
                 unset($function['seealso'][$i]);
             }
@@ -285,34 +285,24 @@ foreach ($functions as &$function) {
     }
 }
 
-
-$modDatabase = array();
-foreach ($functions as $fun) {
-    $arr = array (
-        'method'  => $fun['name'],
-        'pclass'  => isset($fun['class']) ? $fun['class'] : null,
-        'desc'    => $fun['desc'],
-    );
-    unset($fun['name']);
-    unset($fun['class']);
-    
-    $arr['json'] = json_encode($fun);
-    $modDatabase[] = $arr;
-}
-
-
 $stats = array (
     'methods'    => count($functions),
     'timestamp'  => time(),
-    'examples'   => $totalMethodsWithExamples,
+    'examples'   => $totalMethodsWithExamples ?: 0,
 );
 
 if ($processExamples == 'export') {
-    file_put_contents(rtrim($outputDir) . '/examples.json', json_encode($exportExamples));
+    file_put_contents(rtrim($outputDir) . '/examples.json', json_encode($exportExamples, JSON_NUMERIC_CHECK));
 }
 
-file_put_contents(rtrim($outputDir) . '/database.json', json_encode($modDatabase));
-file_put_contents(rtrim($outputDir) . '/stats.json', json_encode($stats));
+$testFuncion = strtolower(get_cmd_arg_value($argv, '--print-test'));
+if ($testFuncion) {
+    echo "\nPrinting test function '$testFuncion':\n";
+    print_r($functions[$testFuncion]);
+}
+
+file_put_contents(rtrim($outputDir) . '/database.json', json_encode($functions, JSON_NUMERIC_CHECK));
+file_put_contents(rtrim($outputDir) . '/stats.json', json_encode($stats, JSON_NUMERIC_CHECK));
 file_put_contents('functions.json', json_encode(array_keys($functions)));
-//}
+
 

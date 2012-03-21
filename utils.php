@@ -42,3 +42,15 @@ function clear_source_code($source) {
     }
     return trim($source);
 }
+
+function get_cmd_arg_value($args, $arg) {
+    foreach ($args as $entry) {
+        if (strpos($entry, $arg . '=') === 0) {
+            return substr($entry, strlen($arg) + 1);
+        }
+    }
+    return null;
+}
+
+//var_dump(get_cmd_arg_value($argv, '--print-test'));
+
