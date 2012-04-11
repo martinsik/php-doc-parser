@@ -95,12 +95,13 @@ if ($handle = opendir($dir)) {
 
         $function = array();
 
-        // function description
+        // function short description
         $description = $xpath->query('//span[@class="dc-title"]');
         if ($description->length > 0) { // some functions don't have any description
             $function['desc'] = simplify_string($xpath->query('//span[@class="dc-title"]')->item(0)->textContent);
         }
 
+        // function long description
         $longDescriptionPs = $xpath->query('//div[contains(@class,"description")]/p[contains(@class,"para")]');
         if ($longDescriptionPs->length > 0) { // some functions don't have any description
             $longDescription = '';
@@ -169,8 +170,6 @@ if ($handle = opendir($dir)) {
                     'class'  => $function['class'],
                 );
             }
-        } else {
-            $function['class'] = null;
         }
 
 
@@ -258,12 +257,11 @@ if ($handle = opendir($dir)) {
                 }
                 $totalMethodsWithExamples++;
             }
-
         }
 
         // add function into the final list
         if (isset($function['name']) && $function['name']) {
-            $functions[$function['name']] = $function;
+            $functions[(isset($function['class']) ? $function['class'] . '::' : '') . $function['name']] = $function;
             if (count($functions) % 100 == 0) {
                 echo '.';
             }
@@ -306,7 +304,7 @@ if ($processExamples == 'export') {
 $testFuncion = strtolower(get_cmd_arg_value($argv, '--print-test'));
 if ($testFuncion) {
     echo "\nPrinting test function '$testFuncion':\n";
-    print_r($functions[$testFuncion]);
+    echo json_encode($functions[$testFuncion]);
 }
 
 file_put_contents($outputDir . '/database.json', json_encode($functions, JSON_NUMERIC_CHECK));
