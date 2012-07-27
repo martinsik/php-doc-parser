@@ -49,3 +49,5 @@ $ignoreFiles = array(
     //'control-structures.alternative-syntax.html',
     //'control-structures.intro.html',
 );
+
+$ignoreFiles = array_combine($ignoreFiles, array_fill(0, count($ignoreFiles), true));

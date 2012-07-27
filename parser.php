@@ -64,9 +64,9 @@ if (in_array('--export-examples', $argv)) {
 }
 
 // If we want to count methods with code snippets
-if ($processExamples) {
-    $totalMethodsWithExamples = 0;
-}
+//if ($processExamples) {
+$totalMethodsWithExamples = 0;
+//}
 
 
 // Array with all fynction/classes parsed by the parser
@@ -84,7 +84,7 @@ if ($handle = opendir($dir)) {
 
         // filename starts with one of the selected categories skip everything else
         $fileGroup = substr($file, 0, strpos($file, '.'));
-        if (!in_array($fileGroup, $groups) || in_array($file, $ignoreFiles)) {
+        if (!isset($groups[$fileGroup]) || isset($ignoreFiles[$file])) {
             continue;
         }
 
@@ -98,7 +98,7 @@ if ($handle = opendir($dir)) {
         // function short description
         $description = $xpath->query('//span[@class="dc-title"]');
         if ($description->length > 0) { // some functions don't have any description
-            $function['desc'] = simplify_string($xpath->query('//span[@class="dc-title"]')->item(0)->textContent);
+            $function['desc'] = trim(simplify_string($description->item(0)->textContent), '.') . '.';
         }
 
         // function long description
@@ -108,7 +108,7 @@ if ($handle = opendir($dir)) {
             foreach ($longDescriptionPs as $p) {
                 $longDescription .= $p->textContent;
             }
-            $function['long_desc'] = simplify_string($longDescription);
+            $function['long_desc'] = trim(simplify_string($longDescription), '.') . '.';
         }
 
         // PHP version since this function is available
@@ -125,23 +125,25 @@ if ($handle = opendir($dir)) {
         // return value data type is parsed later...
 
         // see also part
-        $seeAlsoArray = array();
         $seeAlso = $xpath->query('//div[contains(@class,"seealso")]');
         if ($seeAlso->length > 0) {
+            $function['seealso'] = array();
+            //$seeAlsoArray = array();
             $lis = $xpath->query('.//li', $seeAlso->item(0));
             foreach ($lis as $li) {
                 // store just the name and description without parenthesis
                 $text = explode('-', $li->textContent);
                 $name = rtrim(trim($text[0]), '()');
                 if (strpos($name, ' ') === false) {
-                    $seeAlsoArray[] = array(
+                    $function['seealso'][] = $name;
+                    /*$seeAlsoArray[] = array(
                         'name' => $name,
                         'desc' => isset($text[1]) ? trim($text[1]) : false,
-                    );
+                    );*/
                 }
             }
+            //$function['seealso'] = $seeAlsoArray;
         }
-        $function['seealso'] = $seeAlsoArray;
 
         // filename (url)
         $function['url'] = substr($file, 0, -5);
@@ -161,12 +163,12 @@ if ($handle = opendir($dir)) {
             // function name
             $function['name'] = substr($function['name'], strpos($function['name'], '::') + 2);
 
-            if (!in_array($function['class'], $classes)) {
+            if (!isset($classes[$function['class']])) {
                 /**
                  * @TODO: Distinguish classes and function in a different way
                  */
                 $classes[strtolower($function['class'])] = array(
-                    'name'   => $function['class'],
+                    'name'   => null, //$function['class'],
                     'class'  => $function['class'],
                 );
             }
@@ -189,7 +191,7 @@ if ($handle = opendir($dir)) {
             // parameter containers
             $params = $xpath->query('span[@class="methodparam"]', $description);
             // skip empty parameter list (function declaration that doesn't take any parameter)
-            if ($params->length != 1 && $params->item(0)->textContent != 'void') {
+            if (/*$params->length != 1 && */$params->item(0)->textContent != 'void') {
                 $optional = substr_count($description->textContent, '[');
                 $paramDescriptions = $xpath->query('//div[contains(@class,"parameters")]//dd');
 
@@ -236,17 +238,20 @@ if ($handle = opendir($dir)) {
                         $output = $xpath->query('.//div[@class="cdata"]', $exampleDiv->item($i))->item(0)->textContent;
                     }
 
-                    // code example title, stript beginning and ending php tags
-                    $title = $xpath->query('p', $exampleDiv->item($i))->item(0)->textContent;
-                    // remove some unnecessary stuff
-                    $title = trim(preg_replace('/^(Example #\d+|Beispiel #\d+|Exemplo #\d+|Exemple #\d+|Przykład #\d+)/', '', $title));
-                    $title = trim(preg_replace('/\s+/', ' ', $title));
-
-                    $examples[] = array (
-                        'title'  => $title,
-                        'source' => clear_source_code($sourceCode),
-                        'output' => $output ? clear_source_code($output) : null,
-                    );
+                    // code example title, strip beginning and ending php tags
+                    $ps = $xpath->query('p', $exampleDiv->item($i));
+                    if ($ps->length > 0) {
+                        $title = $ps->item(0)->textContent;
+                        // remove some unnecessary stuff
+                        $title = trim(preg_replace('/^(Example #\d+|Beispiel #\d+|Exemplo #\d+|Exemple #\d+|Przykład #\d+)/', '', $title));
+                        $title = trim(preg_replace('/\s+/', ' ', $title));
+    
+                        $examples[] = array (
+                            'title'  => $title,
+                            'source' => clear_source_code($sourceCode),
+                            'output' => $output ? clear_source_code($output) : null,
+                        );
+                    }
                 }
 
                 // keep examples in a seperate array or put it among other function params
@@ -282,7 +287,7 @@ ksort($functions);
 // traverse all function's "see also" and drop those references that were not parsed
 // (that are not included in the generated JSON output)
 foreach ($functions as &$function) {
-    if ($function['seealso']) {
+    if (isset($function['seealso'])) {
         foreach ($function['seealso'] as $i => $seealso) {
             if (!isset($functions[$seealso['name']])) {
                 unset($function['seealso'][$i]);

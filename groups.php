@@ -8,7 +8,7 @@
  *         to manually check all new methods added because it might unintenional
  *         include some installation or configiration documentation.
  */
-$groups = array (
+$groups = array(
     'function',
     'reflectionclass',
     'reflectionextension',
@@ -56,9 +56,14 @@ $groups = array (
     'sqlite3result',
     'sqlite3stmt',
     'splstack',
+    'splqueue',
     'arrayobject',
     'seekableiterator',
     'recursiveiterator',
     'outeriterator',
     'class.overflowexception',
 );
+
+// performance reasons - to avoid in_array
+$groups = array_combine($groups, array_fill(0, count($groups), true));
+
