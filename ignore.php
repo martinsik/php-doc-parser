@@ -46,6 +46,11 @@ $ignoreFiles = array(
     'sqlite3.requirements.html',
     'sqlite3.resources.html',
     'sqlite3.configuration.html',
+    'pdo.configuration.html',
+    'pdo.installation.html',
+    'pdo.requirements.html',
+    'pdo.resources.html',
+    'pdo.drivers.html',
     //'control-structures.alternative-syntax.html',
     //'control-structures.intro.html',
 );

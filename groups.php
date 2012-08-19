@@ -57,11 +57,16 @@ $groups = array(
     'sqlite3stmt',
     'splstack',
     'splqueue',
+    'spltempfileobject',
+    'splmaxheap',
+    'splminheap',
     'arrayobject',
     'seekableiterator',
     'recursiveiterator',
     'outeriterator',
     'class.overflowexception',
+    'pdo',
+    'pdostatement',
 );
 
 // performance reasons - to avoid in_array

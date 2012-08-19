@@ -15,10 +15,11 @@ doc_dir    - path to "Many HTML files" documentation (http://www.php.net/downloa
 output_dir - directory with generated JSON files
 --export-examples (optional) - Export all code snippets to an extra file examples.json.
 --include-examples (optional) - Include all code snippets in the database.json file.
+--disable-progress (optional) - Don't show any information about processed items
 --print-test=fn_name (optional) - Print test function (eg. to check bug fixes)
 
 EOS;
-    exit;
+    exit(0);
 }
 
 
@@ -63,11 +64,14 @@ if (in_array('--export-examples', $argv)) {
     $processExamples = 'join';
 }
 
+$showProgressbar = !in_array('--disable-progress', $argv);
+
 // If we want to count methods with code snippets
 //if ($processExamples) {
 $totalMethodsWithExamples = 0;
 //}
 
+$testFunction = get_cmd_arg_value($argv, '--print-test');
 
 // Array with all fynction/classes parsed by the parser
 $functions = array();
@@ -77,6 +81,7 @@ $classes = array();
 
 // This array is used only to generated 
 $functionsNames = array();
+
 
 if ($handle = opendir($dir)) {
 
@@ -95,6 +100,13 @@ if ($handle = opendir($dir)) {
 
         $function = array();
 
+        // function name
+        $h1 = $xpath->query('//h1');
+        if ($h1->length != 0) {
+            // make all function names consistent
+            $function['name'] = str_replace('->', '::', $h1->item(0)->textContent);
+        }
+
         // function short description
         $description = $xpath->query('//span[@class="dc-title"]');
         if ($description->length > 0) { // some functions don't have any description
@@ -102,7 +114,7 @@ if ($handle = opendir($dir)) {
         }
 
         // function long description
-        $longDescriptionPs = $xpath->query('//div[contains(@class,"description")]/p[contains(@class,"para")]');
+        $longDescriptionPs = $xpath->query('//div[contains(@class,"description")]/p[contains(@class,"para")][position()=last()]');
         if ($longDescriptionPs->length > 0) { // some functions don't have any description
             $longDescription = '';
             foreach ($longDescriptionPs as $p) {
@@ -147,13 +159,6 @@ if ($handle = opendir($dir)) {
 
         // filename (url)
         $function['url'] = substr($file, 0, -5);
-
-        // function name
-        $h1 = $xpath->query('//h1');
-        if ($h1->length != 0) {
-            // make all function names consistent
-            $function['name'] = str_replace('->', '::', $h1->item(0)->textContent);
-        }
 
         // check whether this function is part of a class
         if (is_class($function['name'])) {
@@ -206,9 +211,9 @@ if ($handle = opendir($dir)) {
 
                     $paramNodes = $xpath->query('*', $params->item($i));
                     $param = array(
-                        'type'  => $paramNodes->item(0)->textContent, // type
+                        'type'  => $paramNodes->item(0) ? $paramNodes->item(0)->textContent : 'unknown', // type
                         'var'   => $paramNodes->length >= 2 ? $paramNodes->item(1)->textContent : false, // variable name
-                        'beh'   => $paramNodes->length - $optional > $i ? 0 : 1, // behaviour (0 = mandatory, 1 = optional)
+                        'beh'   => $params->length - $optional > $i ? 0 : 1, // behaviour (0 = mandatory, 1 = optional)
                         'desc'  => simplify_string($desc),
                     );
                     if ($paramNodes->length >= 3) {
@@ -216,6 +221,11 @@ if ($handle = opendir($dir)) {
                     }
                     $parsedParams['list'][] = $param;
                 }
+
+                //if ('add' == $function['name'] && 'DateTime' == $function['class']) {
+                //    print_r($parsedParams['list']); exit;
+                //}
+
             }
             $function['params'][] = $parsedParams;
         }
@@ -266,17 +276,19 @@ if ($handle = opendir($dir)) {
 
         // add function into the final list
         if (isset($function['name']) && $function['name']) {
+
             $functions[(isset($function['class']) ? $function['class'] . '::' : '') . $function['name']] = $function;
-            if (count($functions) % 100 == 0) {
+
+            if ($showProgressbar && count($functions) % 100 == 0) {
                 echo '.';
             }
         } else {
-            echo $file . ": no method name\n";
+            echo $file . ": no method name found\n";
         }
 
     }
     closedir($handle);
-    echo "\nparsing finished\n";
+    echo "\n";
 }
 
 $functions = array_merge($functions, $classes);
@@ -289,13 +301,27 @@ ksort($functions);
 foreach ($functions as &$function) {
     if (isset($function['seealso'])) {
         foreach ($function['seealso'] as $i => $seealso) {
-            if (!isset($functions[$seealso['name']])) {
+            if (!isset($functions[$seealso])) {
                 unset($function['seealso'][$i]);
             }
         }
     }
 }
 
+// print parsed test function and exit
+if ($testFunction) {
+    if (isset($functions[$testFunction])) {
+        echo json_encode($functions[$testFunction]);
+        exit(0);
+    } else {
+        echo "Unknown test method $testFunction.\n";
+        exit(1);
+    }
+}
+
+/*
+ * Saving data to disk
+ */
 $stats = array (
     'methods'    => count($functions),
     'timestamp'  => time(),
@@ -306,14 +332,16 @@ if ($processExamples == 'export') {
     file_put_contents($outputDir . '/examples.json', json_encode($exportExamples, JSON_NUMERIC_CHECK));
 }
 
+/*
 $testFuncion = strtolower(get_cmd_arg_value($argv, '--print-test'));
 if ($testFuncion) {
     echo "\nPrinting test function '$testFuncion':\n";
     echo json_encode($functions[$testFuncion]);
 }
+*/
 
 file_put_contents($outputDir . '/database.json', json_encode($functions, JSON_NUMERIC_CHECK));
 file_put_contents($outputDir . '/stats.json', json_encode($stats, JSON_NUMERIC_CHECK));
 file_put_contents($outputDir . '/functions.json', json_encode(array_keys($functions)));
 
-
+exit(0);
