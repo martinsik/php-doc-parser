@@ -40,6 +40,7 @@ function clear_source_code($source) {
     if (substr($source, -2) == '?>') {
         $source = substr($source, 0, -2); 
     }
+    // remove \u00a0 empty chars that would be otherwise
     return trim($source);
 }
 

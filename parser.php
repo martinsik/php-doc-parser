@@ -1,5 +1,8 @@
 <?php
 
+ini_set('display_errors', 1);
+error_reporting(E_ALL);
+
 if (count($argv) == 1 || in_array($argv[1], array('/?', '--help', '-h', '-H'))) {
     echo <<<EOS
 Parse all PHP documentation files and generates one big JSON with all
@@ -16,7 +19,7 @@ output_dir - directory with generated JSON files
 --export-examples (optional) - Export all code snippets to an extra file examples.json.
 --include-examples (optional) - Include all code snippets in the database.json file.
 --disable-progress (optional) - Don't show any information about processed items
---print-test=fn_name (optional) - Print test function (eg. to check bug fixes)
+--print-test=fn_name (optional) - Print test function - for debugging only
 
 EOS;
     exit(0);
@@ -52,7 +55,7 @@ require 'utils.php';
 $dir = $argv[$argc - 2]; // input directory
 $outputDir = rtrim($argv[$argc - 1], '/'); // output directory
 if (!is_dir($outputDir)) {
-    mkdir($outputDir);
+    mkdir($outputDir, 0777, true);
 }
 
 // What can we do with code snippets
@@ -75,6 +78,7 @@ $testFunction = get_cmd_arg_value($argv, '--print-test');
 
 // Array with all fynction/classes parsed by the parser
 $functions = array();
+$functionsCount = 0;
 
 // Array with all classes
 $classes = array();
@@ -86,6 +90,7 @@ $functionsNames = array();
 if ($handle = opendir($dir)) {
 
     while (false !== ($file = readdir($handle))) {
+//        echo $file . PHP_EOL;
 
         // filename starts with one of the selected categories skip everything else
         $fileGroup = substr($file, 0, strpos($file, '.'));
@@ -105,6 +110,11 @@ if ($handle = opendir($dir)) {
         if ($h1->length != 0) {
             // make all function names consistent
             $function['name'] = str_replace('->', '::', $h1->item(0)->textContent);
+
+            if (strpos($function['name'], ' ') !== false) {
+                echo 'skip ' . $file . ': ' . $function['name'] . "\n";
+                continue;
+            }
         }
 
         // function short description
@@ -127,6 +137,8 @@ if ($handle = opendir($dir)) {
         $version = $xpath->query('//p[@class="verinfo"]');
         if ($version->length > 0) { // check from which PHP version is it available
             $function['ver'] = trim($version->item(0)->textContent, '()');
+        } else {
+            $function['ver'] = null;
         }
 
         // return value desription
@@ -167,16 +179,21 @@ if ($handle = opendir($dir)) {
             $function['class'] = rewrite_names($function['class']);
             // function name
             $function['name'] = substr($function['name'], strpos($function['name'], '::') + 2);
+            /*if (strtolower($function['name']) == strtolower($function['class'])) {
+                $function['name'] = $function['class'];
+            }*/
 
             if (!isset($classes[$function['class']])) {
                 /**
                  * @TODO: Distinguish classes and function in a different way
                  */
-                $classes[strtolower($function['class'])] = array(
-                    'name'   => null, //$function['class'],
-                    'class'  => $function['class'],
+                $classes[$function['class'] . '::'] = array(
+                    'name'  => null,
+                    'class' => $function['class'],
                 );
             }
+        } else {
+            $function['class'] = null;
         }
 
 
@@ -204,9 +221,14 @@ if ($handle = opendir($dir)) {
                     // fetch for each parameter only paragraphs (sometimes it contains also tables, etc.)
                     $ps = $xpath->query('./p', $paramDescriptions->item($i));
                     // ... and join them into a single string
-                    $desc = '';
+                    $desc = array();
                     for ($j=0; $j < $ps->length; $j++) {
-                        $desc .= ' ' . $ps->item($j)->textContent;
+                        $pText = $dom->saveXML($ps->item($j));
+                        $pText = strip_tags(str_replace(array('<code>', '<code class="parameter">', '</code>'), '`', $pText));
+
+                        if ($pText) {
+                            $desc[] = $pText;
+                        }
                     }
 
                     $paramNodes = $xpath->query('*', $params->item($i));
@@ -214,7 +236,7 @@ if ($handle = opendir($dir)) {
                         'type'  => $paramNodes->item(0) ? $paramNodes->item(0)->textContent : 'unknown', // type
                         'var'   => $paramNodes->length >= 2 ? $paramNodes->item(1)->textContent : false, // variable name
                         'beh'   => $params->length - $optional > $i ? 0 : 1, // behaviour (0 = mandatory, 1 = optional)
-                        'desc'  => simplify_string($desc),
+                        'desc'  => simplify_string(implode('\n', $desc)),
                     );
                     if ($paramNodes->length >= 3) {
                         $param['def'] = trim($paramNodes->item(2)->textContent, ' =');
@@ -230,57 +252,57 @@ if ($handle = opendir($dir)) {
             $function['params'][] = $parsedParams;
         }
 
-        // proccess examples
+        // parse all examples on the page
         if ($processExamples) {
             // check if there are any examples
-            $examplesCont = $xpath->query('//div[contains(@class,"examples")]');
-            if ($examplesCont->length > 0) {
-                $examples = array();
+            $examples = array();
 
-                // one example
-                $exampleDiv = $xpath->query('div[@class="example"]', $examplesCont->item(0));
-                for ($i=0; $i < $exampleDiv->length; $i++) {
-                    $output = null;
-                    // get as pure text, without any syntax highlighting
-                    $sourceCode = $dom->saveXML($xpath->query('.//div[@class="phpcode"]', $exampleDiv->item($i))->item(0));
-                    $outputDiv = $xpath->query('.//div[@class="cdata"]', $exampleDiv->item($i));
-                    if ($outputDiv->length > 0) {
-                        $output = $xpath->query('.//div[@class="cdata"]', $exampleDiv->item($i))->item(0)->textContent;
-                    }
-
-                    // code example title, strip beginning and ending php tags
-                    $ps = $xpath->query('p', $exampleDiv->item($i));
-                    if ($ps->length > 0) {
-                        $title = $ps->item(0)->textContent;
-                        // remove some unnecessary stuff
-                        $title = trim(preg_replace('/^(Example #\d+|Beispiel #\d+|Exemplo #\d+|Exemple #\d+|Przykład #\d+)/', '', $title));
-                        $title = trim(preg_replace('/\s+/', ' ', $title));
-    
-                        $examples[] = array (
-                            'title'  => $title,
-                            'source' => clear_source_code($sourceCode),
-                            'output' => $output ? clear_source_code($output) : null,
-                        );
-                    }
+            // one example
+            $exampleDiv = $xpath->query('//div[@class="example"]');
+            for ($i=0; $i < $exampleDiv->length; $i++) {
+                $output = null;
+                // get as pure text, without any syntax highlighting
+                $sourceCode = $dom->saveXML($xpath->query('.//div[@class="phpcode"]', $exampleDiv->item($i))->item(0));
+                $outputDiv = $xpath->query('.//div[@class="cdata"]', $exampleDiv->item($i));
+                if ($outputDiv->length > 0) {
+                    $output = $xpath->query('.//div[@class="cdata"]', $exampleDiv->item($i))->item(0)->textContent;
                 }
 
-                // keep examples in a seperate array or put it among other function params
-                if ($processExamples == 'export') {
-                    $exportExamples[$file] = $examples;
-                } elseif ($processExamples == 'join') {
-                    $function['examples'] = $examples;
+                // code example title, strip beginning and ending php tags
+                $ps = $xpath->query('p', $exampleDiv->item($i));
+                if ($ps->length > 0) {
+                    $title = $ps->item(0)->textContent;
+                    // remove some unnecessary stuff
+                    $title = trim(preg_replace('/^(Example #\d+|Beispiel #\d+|Exemplo #\d+|Exemple #\d+|Przykład #\d+)/', '', $title));
+                    $title = trim(preg_replace('/\s+/', ' ', $title));
+
+                    $examples[] = array (
+                        'title'  => $title,
+                        'source' => clear_source_code($sourceCode),
+                        'output' => $output ? clear_source_code($output) : null,
+                    );
                 }
-                $totalMethodsWithExamples++;
             }
+
+            // keep examples in a seperate array or put it among other function params
+            if ($processExamples == 'export') {
+                $exportExamples[$file] = $examples;
+            } elseif ($processExamples == 'join') {
+                $function['examples'] = $examples;
+            }
+            $totalMethodsWithExamples++;
+//            }
         }
 
         // add function into the final list
         if (isset($function['name']) && $function['name']) {
 
             $functions[(isset($function['class']) ? $function['class'] . '::' : '') . $function['name']] = $function;
+            $functionsCount++;
 
-            if ($showProgressbar && count($functions) % 100 == 0) {
+            if ($showProgressbar && $functionsCount % 100 == 0) {
                 echo '.';
+//                echo $functionsCount . PHP_EOL;
             }
         } else {
             echo $file . ": no method name found\n";
@@ -294,7 +316,10 @@ if ($handle = opendir($dir)) {
 $functions = array_merge($functions, $classes);
 
 // not necessary but it's easier to find buggy function manually
-ksort($functions);
+function cmp($a, $b) {
+    return strcasecmp($a, $b);
+}
+uksort($functions, 'cmp');
 
 // traverse all function's "see also" and drop those references that were not parsed
 // (that are not included in the generated JSON output)
@@ -311,7 +336,7 @@ foreach ($functions as &$function) {
 // print parsed test function and exit
 if ($testFunction) {
     if (isset($functions[$testFunction])) {
-        echo json_encode($functions[$testFunction]);
+        echo json_encode($functions[$testFunction], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
         exit(0);
     } else {
         echo "Unknown test method $testFunction.\n";
@@ -329,7 +354,7 @@ $stats = array (
 );
 
 if ($processExamples == 'export') {
-    file_put_contents($outputDir . '/examples.json', json_encode($exportExamples, JSON_NUMERIC_CHECK));
+    file_put_contents($outputDir . '/examples.json', json_encode($exportExamples, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE));
 }
 
 /*
@@ -340,7 +365,7 @@ if ($testFuncion) {
 }
 */
 
-file_put_contents($outputDir . '/database.json', json_encode($functions, JSON_NUMERIC_CHECK));
+file_put_contents($outputDir . '/database.json', json_encode($functions, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE));
 file_put_contents($outputDir . '/stats.json', json_encode($stats, JSON_NUMERIC_CHECK));
 file_put_contents($outputDir . '/functions.json', json_encode(array_keys($functions)));
 

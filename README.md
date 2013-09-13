@@ -15,7 +15,9 @@ By the way, at the bottom of this page there's parsed `str_replace` function in 
 
   2. **Run the parser script:**
 
-        php parser.php unpacked_documentation output_directory
+        php54 parser.php unpacked_documentation output_directory
+
+        Note: `parser.php` requires PHP 5.4 because it uses some new `json_encode` options.
 
 When it's finished you should see in your `output_directory` three files: `database.json`, `functions.json` and `stats.json`.
 
@@ -88,6 +90,7 @@ This is how `str_replace` looks like deep inside in [`output\en`](https://github
 
 ## Known limitations
 
+  * It's quiet memory demanding, memory_limit=512M should be enough.
   * Not all standard classes are included by the parser (eg. Exceptions are missing).
   * There are no PHP statements (for, if, while, ...)
   * It's not able to recognize objective or procedural style in classes like in `mysqli`.
