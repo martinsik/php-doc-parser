@@ -51,37 +51,62 @@ This is how `str_replace` looks like deep inside in [`output\en`](https://github
       "str_repeat": { ... }
       "str_replace":
         {
-          "name": "str_replace",
-          "desc": "Replace all occurrences of the search string with the replacement string.",
-          "long_desc": "If you don't need fancy replacing rules (like regular expressions), you should always use this function instead of preg_replace().",
-          "ver": "PHP 4, PHP 5",
-          "ret_desc": "This function returns a string or an array with the replaced values.",
-          "seealso": ["str_ireplace", "substr_replace", "preg_replace", "strtr"],
-          "url": "function.str-replace",
-          "params": [{
-            "list": [{
-              "type": "mixed",
-              "var": "$search",
-              "beh": 0,
-              "desc": "The value being searched for, otherwise known as the needle. An array may be used to designate multiple needles."
-            }, {
-              "type": "mixed",
-              "var": "$replace",
-              "beh": 0,
-              "desc": "The replacement value that replaces found search values. An array may be used to designate multiple replacements."
-            }, {
-              "type": "mixed",
-              "var": "$subject",
-              "beh": 0,
-              "desc": "The string or array being searched and replaced on, otherwise known as the haystack. If subject is an array, then the search and replace is performed with every entry of subject, and the return value is an array as well."
-            }, {
-              "type": "int",
-              "var": "&$count",
-              "beh": 1,
-              "desc": "If passed, this will be set to the number of replacements performed."
-            }],
-            "ret_type": "mixed"
-          }]
+            "name": "str_replace",
+            "desc": "Replace all occurrences of the search string with the replacement string.",
+            "long_desc": "This function returns a string or an array with all occurrences of `search` in `subject` replaced with the given `replace` value.\\n\\nIf you don't need fancy replacing rules (like regular expressions), you should always use this function instead of preg\\_replace().",
+            "ver": "PHP 4, PHP 5",
+            "ret_desc": "This function returns a string or an array with the replaced values.",
+            "seealso": [
+                "str_ireplace",
+                "substr_replace",
+                "preg_replace",
+                "strtr"
+            ],
+            "url": "function.str-replace",
+            "class": null,
+            "params": [
+                {
+                    "list": [
+                        {
+                            "type": "mixed",
+                            "var": "$search",
+                            "beh": 0,
+                            "desc": "The value being searched for, otherwise known as the needle`. An array may be used to designate multiple needles."
+                        },
+                        {
+                            "type": "mixed",
+                            "var": "$replace",
+                            "beh": 0,
+                            "desc": "The replacement value that replaces found `search` values. An array may be used to designate multiple replacements."
+                        },
+                        {
+                            "type": "mixed",
+                            "var": "$subject",
+                            "beh": 0,
+                            "desc": "The string or array being searched and replaced on, otherwise known as the haystack`.\\n\\nIf `subject` is an array, then the search and replace is performed with every entry of `subject`, and the return value is an array as well."
+                        },
+                        {
+                            "type": "int",
+                            "var": "&$count",
+                            "beh": 1,
+                            "desc": "If passed, this will be set to the number of replacements performed."
+                        }
+                    ],
+                    "ret_type": "mixed"
+                }
+            ],
+            "examples": [
+                {
+                    "title": "Basic str_replace() examples",
+                    "source": "\/\/ Provides: <body text='black'>\n$bodytag = str_replace(\"%body%\", \"black\", \"<body text='%body%'>\");\n\n\/\/ Provides: Hll Wrld f PHP\n$vowels = array(\"a\", \"e\", \"i\", \"o\", \"u\", \"A\", \"E\", \"I\", \"O\", \"U\");\n$onlyconsonants = str_replace($vowels, \"\", \"Hello World of PHP\");\n\n\/\/ Provides: You should eat pizza, beer, and ice cream every day\n$phrase  = \"You should eat fruits, vegetables, and fiber every day.\";\n$healthy = array(\"fruits\", \"vegetables\", \"fiber\");\n$yummy   = array(\"pizza\", \"beer\", \"ice cream\");\n\n$newphrase = str_replace($healthy, $yummy, $phrase);\n\n\/\/ Provides: 2\n$str = str_replace(\"ll\", \"\", \"good golly miss molly!\", $count);\necho $count;",
+                    "output": null
+                },
+                {
+                    "title": "Examples of potential str_replace() gotchas",
+                    "source": "\/\/ Order of replacement\n$str     = \"Line 1\\nLine 2\\rLine 3\\r\\nLine 4\\n\";\n$order   = array(\"\\r\\n\", \"\\n\", \"\\r\");\n$replace = '<br \/>';\n\n\/\/ Processes \\r\\n's first so they aren't converted twice.\n$newstr = str_replace($order, $replace, $str);\n\n\/\/ Outputs F because A is replaced with B, then B is replaced with C, and so on...\n\/\/ Finally E is replaced with F, because of left to right replacements.\n$search  = array('A', 'B', 'C', 'D', 'E');\n$replace = array('B', 'C', 'D', 'E', 'F');\n$subject = 'A';\necho str_replace($search, $replace, $subject);\n\n\/\/ Outputs: apearpearle pear\n\/\/ For the same reason mentioned above\n$letters = array('a', 'p');\n$fruit   = array('apple', 'pear');\n$text    = 'a p';\n$output  = str_replace($letters, $fruit, $text);\necho $output;",
+                    "output": null
+                }
+            ]
         },
       "str_rot13": { ... },
       "str_shuffle": { ... },
@@ -91,7 +116,6 @@ This is how `str_replace` looks like deep inside in [`output\en`](https://github
 ## Known limitations
 
   * It's quiet memory demanding, `memory_limit=128M` should be enough.
-  * Not all standard classes are included by the parser (eg. Exceptions are missing).
   * There are no PHP statements (for, if, while, ...)
   * It's not able to recognize objective or procedural style in classes like in `mysqli`.
 

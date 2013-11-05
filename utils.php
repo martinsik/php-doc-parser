@@ -53,7 +53,7 @@ function get_cmd_arg_value($args, $arg) {
     return null;
 }
 
-function extract_formated_text($elms) {
+function extract_formated_text($elms, $xpath = null) {
     $textParts = array();
 
     if ($elms->length == 0) {
@@ -62,27 +62,19 @@ function extract_formated_text($elms) {
     $dom = new \DOMDocument();
 
     for ($i=0; $i < $elms->length; $i++) {
-        $nodeCopy = $dom->importNode($elms->item($i), true);
-        $pText = $dom->saveXML($nodeCopy);
+        if ($elms->item($i)->tagName == 'ul') {
+            $pText = extract_formated_text($xpath->query('./li', $elms->item($i)), $xpath);
+        } else {
+            $nodeCopy = $dom->importNode($elms->item($i), true);
+            $pText = $dom->saveXML($nodeCopy);
+        }
         $pText = html_entity_decode(strip_tags(str_replace(array('<strong><code>', '<var class="varname">', '</var>', '</code></strong>', '<em><code class="parameter">', '</code></em>', '<code>', '<code class="parameter">', '<code class="code">', '</code>', '<em>', '</em>'), '`', $pText)));
-//        $pText = str_replace(array('\n', '\r'), array('\\\\n', '\\\\r'), $pText);
-
-//        $pText = preg_replace('/\\n\\n/i', '\n', $pText);
-//        $pText = preg_replace('/(\b(?<![`])' . "\\n" . '+\b(?![`]))/i', '\n', $pText);
-
-//        $pText = preg_replace('/(\b(?<![`])\\n+\b(?![`]))/i', "XXX", $pText);
-
-//        $pText = str_replace("\n", '', $pText);
-//        $pText = str_replace('\\n', "XXX", $pText);
 
         // looks crazy but this matches all words not surrounded by ` and escapes it
         $pText = preg_replace_callback('/(\b(?<![`])[a-zA-Z_][a-zA-Z_0-9]*\b(?![`]))/i', function($subject) {
             // escape '_' and '*' to avoid malforming function names like 'html_entity_decode' by markdown
             return str_replace(array('_', '*'), array('\_', '\*'), $subject[0]);
         }, $pText);
-
-
-//        $pText = str_replace('\n', "\n", $pText);
 
         if (strpos($pText, 'Warning') != 0) {
             $pText = str_replace('Warning:', '**Warning**:', $pText);

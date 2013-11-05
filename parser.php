@@ -86,15 +86,15 @@ $classes = array();
 // This array is used only to generated 
 $functionsNames = array();
 
+$allowed_class_groups = get_classes($dir);
 
 if ($handle = opendir($dir)) {
-
     while (false !== ($file = readdir($handle))) {
-//        echo $file . PHP_EOL;
-
         // filename starts with one of the selected categories skip everything else
-        $fileGroup = substr($file, 0, strpos($file, '.'));
-        if (!isset($groups[$fileGroup]) || isset($ignoreFiles[$file])) {
+        $file_group = substr($file, 0, strpos($file, '.'));
+
+        if ($file_group != 'function' && (!isset($allowed_class_groups[$file_group]) || isset($ignoreFiles[$file]))) {
+//            echo "skip: $file - $file_group\n";
             continue;
         }
 
@@ -112,27 +112,30 @@ if ($handle = opendir($dir)) {
             $function['name'] = str_replace('->', '::', $h1->item(0)->textContent);
 
             if (strpos($function['name'], ' ') !== false) {
-                echo 'skip ' . $file . ': ' . $function['name'] . "\n";
+//                echo 'skip ' . $file . ': ' . $function['name'] . "\n";
                 continue;
             }
+        }
+
+        // check if it managed to find function name
+        if (!isset($function['name']) || !$function['name']) {
+            continue;
         }
 
         // function short description
         $description = $xpath->query('//span[@class="dc-title"]');
         if ($description->length > 0) { // some functions don't have any description
             $function['desc'] = trim(simplify_string($description->item(0)->textContent), '.') . '.';
+        } else {
+            $function['desc'] = null;
         }
 
         // function long description
         $longDescParagraphs = $xpath->query('//div[contains(@class,"description")]//p[contains(@class,"para") or contains(@class,"simpara")]');
-//        if ($longDescriptionPs->length > 0) { // some functions don't have any description
-////            $longDescription = '';
-////            foreach ($longDescriptionPs as $p) {
-////                $longDescription .= $p->textContent;
-////            }
-//            $function['long_desc'] = trim(simplify_string($longDescription), '.') . '.';
-//        }
-        $function['long_desc'] = trim(extract_formated_text($longDescParagraphs), '.') . '.';
+        $function['long_desc'] = extract_formated_text($longDescParagraphs);
+        if ($function['long_desc']) {
+            $function['long_desc'] = trim($function['long_desc'], '.') . '.';
+        }
 
         // PHP version since this function is available
         $version = $xpath->query('//p[@class="verinfo"]');
@@ -161,13 +164,8 @@ if ($handle = opendir($dir)) {
                 $name = rtrim(trim($text[0]), '()');
                 if (strpos($name, ' ') === false) {
                     $function['seealso'][] = $name;
-                    /*$seeAlsoArray[] = array(
-                        'name' => $name,
-                        'desc' => isset($text[1]) ? trim($text[1]) : false,
-                    );*/
                 }
             }
-            //$function['seealso'] = $seeAlsoArray;
         }
 
         // filename (url)
@@ -180,9 +178,6 @@ if ($handle = opendir($dir)) {
             $function['class'] = rewrite_names($function['class']);
             // function name
             $function['name'] = substr($function['name'], strpos($function['name'], '::') + 2);
-            /*if (strtolower($function['name']) == strtolower($function['class'])) {
-                $function['name'] = $function['class'];
-            }*/
 
             if (!isset($classes[$function['class']])) {
                 /* @todo: distinguish classes and function in a different way */
@@ -195,6 +190,10 @@ if ($handle = opendir($dir)) {
             $function['class'] = null;
         }
 
+        // check if it managed to find function name
+        if (!$function['class'] && !isset($function['params']) && !isset($function['desc']) && !isset($function['long_desc'])) {
+            continue;
+        }
 
         // function description (parameters)
         // Note: One function can have multiple parameter count (see http://www.php.net/manual/en/function.strtr.php)
@@ -222,17 +221,13 @@ if ($handle = opendir($dir)) {
                         'type'  => $paramNodes->item(0) ? $paramNodes->item(0)->textContent : 'unknown', // type
                         'var'   => $paramNodes->length >= 2 ? $paramNodes->item(1)->textContent : false, // variable name
                         'beh'   => $params->length - $optional > $i ? 0 : 1, // behaviour (0 = mandatory, 1 = optional)
-                        'desc'  => extract_formated_text($xpath->query('./*[self::p or self::dl or self::div[@class="methodsynopsis dc-description"]]', $paramDescriptions->item($i))), // paragraphs with text description
+                        'desc'  => extract_formated_text($xpath->query('./*[self::p or self::ul or self::blockquote or self::div[@class="methodsynopsis dc-description"]]', $paramDescriptions->item($i)), $xpath), // paragraphs with text description
                     );
                     if ($paramNodes->length >= 3) {
                         $param['def'] = trim($paramNodes->item(2)->textContent, ' =');
                     }
                     $parsedParams['list'][] = $param;
                 }
-
-                //if ('add' == $function['name'] && 'DateTime' == $function['class']) {
-                //    print_r($parsedParams['list']); exit;
-                //}
 
             }
             $function['params'][] = $parsedParams;
@@ -328,14 +323,6 @@ $stats = array (
 if ($processExamples == 'export') {
     file_put_contents($outputDir . '/examples.json', json_encode($exportExamples, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE));
 }
-
-/*
-$testFuncion = strtolower(get_cmd_arg_value($argv, '--print-test'));
-if ($testFuncion) {
-    echo "\nPrinting test function '$testFuncion':\n";
-    echo json_encode($functions[$testFuncion]);
-}
-*/
 
 file_put_contents($outputDir . '/database.json', json_encode($functions, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE));
 file_put_contents($outputDir . '/stats.json', json_encode($stats, JSON_NUMERIC_CHECK));

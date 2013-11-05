@@ -1,75 +1,13 @@
 <?php
 
-/**
- * Only files starting with these prefixes will be parsed by the parser
- */
+function get_classes($dir) {
+    $files = [];
 
-/** @TODO: There are still many prefixes to be added. But it's necessary
- *         to manually check all new methods added because it might unintenional
- *         include some installation or configuration documentation.
- */
-$groups = array(
-    'function',
-    'reflectionclass',
-    'reflectionextension',
-    'reflectionclass',
-    'reflectionfunction',
-    'reflectionfunctionabstract',
-    'reflectionmethod',
-    'reflectionobject',
-    'reflectionparameter',
-    'reflectionproperty',
-    'domdocument',
-    'domattr',
-    'domelement',
-    'domnode',
-    'domentity',
-    'domcomment',
-    'domxpath',
-    'domnodelist',
-    'domtext',
-    'xmlreader',
-    'cairocontext',
-    'xpathobject',
-    'samconnection',
-    'datetime',
-    'exception',
-    'directoryiterator',
-    'datetimezone',
-    'dateinterval',
-    'arrayiterator',
-    'arrayaccess',
-    'countable',
-    'swfsound',
-    'simplexmlelement',
-    'simplexmliterator',
-    'mysqli',
-    'mysqli-stmt',
-    'splfixedarray',
-    'splfileobject',
-    'splfileinfo',
-    'splfloat',
-    'spldoublylinkedlist',
-    'splheap',
-    'splobjectstorage',
-    'splpriorityqueue',
-    'sqlite3',
-    'sqlite3result',
-    'sqlite3stmt',
-    'splstack',
-    'splqueue',
-    'spltempfileobject',
-    'splmaxheap',
-    'splminheap',
-    'arrayobject',
-    'seekableiterator',
-    'recursiveiterator',
-    'outeriterator',
-    'class.overflowexception',
-    'pdo',
-    'pdostatement',
-);
+    foreach (glob($dir . '/class.*') as $file) {
+        preg_match('/\.([a-zA-Z0-9_\-]+)\./', $file, $matches);
+        // use assoc array for performance reasons
+        $files[$matches[1]] = true;
+    }
 
-// performance reasons - to avoid in_array
-$groups = array_combine($groups, array_fill(0, count($groups), true));
-
+    return $files;
+}
