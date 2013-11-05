@@ -8,10 +8,10 @@ if (count($argv) == 1 || in_array($argv[1], array('/?', '--help', '-h', '-H'))) 
 Parse all PHP documentation files and generates one big JSON with all
 methods and classes.
 Parser generated one extra file stats.json with current timestamp and number
-of all methods and classes successfuly parsed and included in the database.json file.
+of all methods and classes successfully parsed and included in the database.json file.
 
 Usage:
-php parse.php [--export-examples|--join-examples|--print-test=fn_name] doc_dir output_dir
+php parse.php [--export-examples|--include-examples|--print-test=fn_name] doc_dir output_dir
 
 Where:
 doc_dir    - path to "Many HTML files" documentation (http://www.php.net/download-docs.php)
@@ -98,10 +98,10 @@ if ($handle = opendir($dir)) {
             continue;
         }
 
-        $dom = new DOMDocument();
+        $dom = new \DOMDocument();
         @$dom->loadHTML(file_get_contents($dir . '/' . $file));
         // Most important object used to traverse HTML DOM structure
-        $xpath = new DOMXPath($dom);
+        $xpath = new \DOMXPath($dom);
 
         $function = array();
 
@@ -124,14 +124,15 @@ if ($handle = opendir($dir)) {
         }
 
         // function long description
-        $longDescriptionPs = $xpath->query('//div[contains(@class,"description")]/p[contains(@class,"para")][position()=last()]');
-        if ($longDescriptionPs->length > 0) { // some functions don't have any description
-            $longDescription = '';
-            foreach ($longDescriptionPs as $p) {
-                $longDescription .= $p->textContent;
-            }
-            $function['long_desc'] = trim(simplify_string($longDescription), '.') . '.';
-        }
+        $longDescParagraphs = $xpath->query('//div[contains(@class,"description")]//p[contains(@class,"para") or contains(@class,"simpara")]');
+//        if ($longDescriptionPs->length > 0) { // some functions don't have any description
+////            $longDescription = '';
+////            foreach ($longDescriptionPs as $p) {
+////                $longDescription .= $p->textContent;
+////            }
+//            $function['long_desc'] = trim(simplify_string($longDescription), '.') . '.';
+//        }
+        $function['long_desc'] = trim(extract_formated_text($longDescParagraphs), '.') . '.';
 
         // PHP version since this function is available
         $version = $xpath->query('//p[@class="verinfo"]');
@@ -184,9 +185,7 @@ if ($handle = opendir($dir)) {
             }*/
 
             if (!isset($classes[$function['class']])) {
-                /**
-                 * @TODO: Distinguish classes and function in a different way
-                 */
+                /* @todo: distinguish classes and function in a different way */
                 $classes[$function['class'] . '::'] = array(
                     'name'  => null,
                     'class' => $function['class'],
@@ -218,25 +217,12 @@ if ($handle = opendir($dir)) {
                 $paramDescriptions = $xpath->query('//div[contains(@class,"parameters")]//dd');
 
                 for ($i=0; $i < $params->length; $i++) {
-                    // fetch for each parameter only paragraphs (sometimes it contains also tables, etc.)
-                    $ps = $xpath->query('./p', $paramDescriptions->item($i));
-                    // ... and join them into a single string
-                    $desc = array();
-                    for ($j=0; $j < $ps->length; $j++) {
-                        $pText = $dom->saveXML($ps->item($j));
-                        $pText = strip_tags(str_replace(array('<code>', '<code class="parameter">', '</code>'), '`', $pText));
-
-                        if ($pText) {
-                            $desc[] = $pText;
-                        }
-                    }
-
                     $paramNodes = $xpath->query('*', $params->item($i));
                     $param = array(
                         'type'  => $paramNodes->item(0) ? $paramNodes->item(0)->textContent : 'unknown', // type
                         'var'   => $paramNodes->length >= 2 ? $paramNodes->item(1)->textContent : false, // variable name
                         'beh'   => $params->length - $optional > $i ? 0 : 1, // behaviour (0 = mandatory, 1 = optional)
-                        'desc'  => simplify_string(implode('\n', $desc)),
+                        'desc'  => extract_formated_text($xpath->query('./*[self::p or self::dl or self::div[@class="methodsynopsis dc-description"]]', $paramDescriptions->item($i))), // paragraphs with text description
                     );
                     if ($paramNodes->length >= 3) {
                         $param['def'] = trim($paramNodes->item(2)->textContent, ' =');
@@ -254,11 +240,9 @@ if ($handle = opendir($dir)) {
 
         // parse all examples on the page
         if ($processExamples) {
-            // check if there are any examples
             $examples = array();
-
-            // one example
-            $exampleDiv = $xpath->query('//div[@class="example"]');
+            // grab all code examples
+            $exampleDiv = $xpath->query('//div[@class="example" or @class="informalexample"]');
             for ($i=0; $i < $exampleDiv->length; $i++) {
                 $output = null;
                 // get as pure text, without any syntax highlighting
@@ -275,13 +259,15 @@ if ($handle = opendir($dir)) {
                     // remove some unnecessary stuff
                     $title = trim(preg_replace('/^(Example #\d+|Beispiel #\d+|Exemplo #\d+|Exemple #\d+|Przykład #\d+)/', '', $title));
                     $title = trim(preg_replace('/\s+/', ' ', $title));
-
-                    $examples[] = array (
-                        'title'  => $title,
-                        'source' => clear_source_code($sourceCode),
-                        'output' => $output ? clear_source_code($output) : null,
-                    );
+                } else {
+                    $title = null;
                 }
+
+                $examples[] = array(
+                    'title'  => $title,
+                    'source' => clear_source_code($sourceCode),
+                    'output' => trim($output) ?: null,
+                );
             }
 
             // keep examples in a seperate array or put it among other function params
@@ -316,10 +302,9 @@ if ($handle = opendir($dir)) {
 $functions = array_merge($functions, $classes);
 
 // not necessary but it's easier to find buggy function manually
-function cmp($a, $b) {
+uksort($functions, function($a, $b) {
     return strcasecmp($a, $b);
-}
-uksort($functions, 'cmp');
+});
 
 // traverse all function's "see also" and drop those references that were not parsed
 // (that are not included in the generated JSON output)
@@ -333,20 +318,7 @@ foreach ($functions as &$function) {
     }
 }
 
-// print parsed test function and exit
-if ($testFunction) {
-    if (isset($functions[$testFunction])) {
-        echo json_encode($functions[$testFunction], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
-        exit(0);
-    } else {
-        echo "Unknown test method $testFunction.\n";
-        exit(1);
-    }
-}
-
-/*
- * Saving data to disk
- */
+// overall statistics
 $stats = array (
     'methods'    => count($functions),
     'timestamp'  => time(),
@@ -368,5 +340,16 @@ if ($testFuncion) {
 file_put_contents($outputDir . '/database.json', json_encode($functions, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE));
 file_put_contents($outputDir . '/stats.json', json_encode($stats, JSON_NUMERIC_CHECK));
 file_put_contents($outputDir . '/functions.json', json_encode(array_keys($functions)));
+
+
+// print parsed test function and exit
+if ($testFunction) {
+    if (isset($functions[$testFunction])) {
+        echo json_encode($functions[$testFunction], JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
+    } else {
+        echo "Unknown test method $testFunction.\n";
+        exit(1);
+    }
+}
 
 exit(0);

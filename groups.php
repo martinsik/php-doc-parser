@@ -6,7 +6,7 @@
 
 /** @TODO: There are still many prefixes to be added. But it's necessary
  *         to manually check all new methods added because it might unintenional
- *         include some installation or configiration documentation.
+ *         include some installation or configuration documentation.
  */
 $groups = array(
     'function',
@@ -27,6 +27,7 @@ $groups = array(
     'domcomment',
     'domxpath',
     'domnodelist',
+    'domtext',
     'xmlreader',
     'cairocontext',
     'xpathobject',
