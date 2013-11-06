@@ -64,11 +64,18 @@ function extract_formated_text($elms, $xpath = null) {
     for ($i=0; $i < $elms->length; $i++) {
         if ($elms->item($i)->tagName == 'ul') {
             $pText = extract_formated_text($xpath->query('./li', $elms->item($i)), $xpath);
+        } else if ($elms->item($i)->tagName == 'table') {
+            $pText = extract_formated_text($xpath->query('./tbody/tr', $elms->item($i)), $xpath);
         } else {
             $nodeCopy = $dom->importNode($elms->item($i), true);
             $pText = $dom->saveXML($nodeCopy);
         }
+
         $pText = html_entity_decode(strip_tags(str_replace(array('<strong><code>', '<var class="varname">', '</var>', '</code></strong>', '<em><code class="parameter">', '</code></em>', '<code>', '<code class="parameter">', '<code class="code">', '</code>', '<em>', '</em>'), '`', $pText)));
+
+        if ($pText == 'Object oriented style' || $pText == 'Procedural style') {
+            continue;
+        }
 
         // looks crazy but this matches all words not surrounded by ` and escapes it
         $pText = preg_replace_callback('/(\b(?<![`])[a-zA-Z_][a-zA-Z_0-9]*\b(?![`]))/i', function($subject) {

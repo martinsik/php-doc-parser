@@ -77,14 +77,14 @@ $totalMethodsWithExamples = 0;
 $testFunction = get_cmd_arg_value($argv, '--print-test');
 
 // Array with all fynction/classes parsed by the parser
-$functions = array();
+$functions = [];
 $functionsCount = 0;
 
 // Array with all classes
-$classes = array();
+$classes = [];
 
 // This array is used only to generated 
-$functionsNames = array();
+$functionsNames = [];
 
 $allowed_class_groups = get_classes($dir);
 
@@ -103,17 +103,23 @@ if ($handle = opendir($dir)) {
         // Most important object used to traverse HTML DOM structure
         $xpath = new \DOMXPath($dom);
 
-        $function = array();
+        $function = [];
 
         // function name
         $h1 = $xpath->query('//h1');
         if ($h1->length != 0) {
-            // make all function names consistent
-            $function['name'] = str_replace('->', '::', $h1->item(0)->textContent);
+            for ($i = 0; $i < $h1->length; $i++) {
+                // make all function names consistent
+                $funcName = str_replace('->', '::', $h1->item($i)->textContent);
+                if ($i == 0) {
+                    $function['name'] = $funcName;
+                } else {
+                    if (!isset($function['alt_names'])) {
+                        $function['alt_names'] = [];
+                    }
+                    $function['alt_names'][] = $funcName;
+                }
 
-            if (strpos($function['name'], ' ') !== false) {
-//                echo 'skip ' . $file . ': ' . $function['name'] . "\n";
-                continue;
             }
         }
 
@@ -155,7 +161,7 @@ if ($handle = opendir($dir)) {
         // see also part
         $seeAlso = $xpath->query('//div[contains(@class,"seealso")]');
         if ($seeAlso->length > 0) {
-            $function['seealso'] = array();
+            $function['seealso'] = [];
             //$seeAlsoArray = array();
             $lis = $xpath->query('.//li', $seeAlso->item(0));
             foreach ($lis as $li) {
@@ -221,7 +227,7 @@ if ($handle = opendir($dir)) {
                         'type'  => $paramNodes->item(0) ? $paramNodes->item(0)->textContent : 'unknown', // type
                         'var'   => $paramNodes->length >= 2 ? $paramNodes->item(1)->textContent : false, // variable name
                         'beh'   => $params->length - $optional > $i ? 0 : 1, // behaviour (0 = mandatory, 1 = optional)
-                        'desc'  => extract_formated_text($xpath->query('./*[self::p or self::ul or self::blockquote or self::div[@class="methodsynopsis dc-description"]]', $paramDescriptions->item($i)), $xpath), // paragraphs with text description
+                        'desc'  => extract_formated_text($xpath->query('./*[self::p or self::ul or self::blockquote or self::table or self::div[@class="methodsynopsis dc-description"]]', $paramDescriptions->item($i)), $xpath), // paragraphs with text description
                     );
                     if ($paramNodes->length >= 3) {
                         $param['def'] = trim($paramNodes->item(2)->textContent, ' =');
@@ -296,13 +302,13 @@ if ($handle = opendir($dir)) {
 
 $functions = array_merge($functions, $classes);
 
-// not necessary but it's easier to find buggy function manually
-uksort($functions, function($a, $b) {
-    return strcasecmp($a, $b);
-});
+//uksort($functions, function($a, $b) {
+//    return strcasecmp($a, $b);
+//});
 
 // traverse all function's "see also" and drop those references that were not parsed
 // (that are not included in the generated JSON output)
+// sometimes there're links that aren't interesting for us
 foreach ($functions as &$function) {
     if (isset($function['seealso'])) {
         foreach ($function['seealso'] as $i => $seealso) {
