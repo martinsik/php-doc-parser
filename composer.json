@@ -1,7 +1,7 @@
 {
     "name": "martinsik/php-doc-parser",
     "homepage": "https://github.com/martinsik/php-doc-parser",
-    "description": "Parser for PHP documentation with CLI interface.",
+    "description": "Parser for PHP documentation with CLI interface and output to JSON + Markdown.",
     "license": "MIT",
     "require": {
         "php": ">=5.4",

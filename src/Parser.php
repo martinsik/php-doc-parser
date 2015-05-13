@@ -48,23 +48,12 @@ class Parser {
 
         // Parse function name.
         $h1 = $xpath->query('//h1[@class="refname"]');
-//        if ($h1->length != 0) {
-//            $function['name'] = [];
-//            for ($i = 0; $i < $h1->length; $i++) {
-//                // make all function names consistent
-//                $funcName = str_replace('->', '::', $h1->item($i)->textContent);
-//                $function['name'][] = $funcName;
-//            }
-//        }
 
         // Check if it managed to find function name.
         if ($h1->length == 0) {
             $result->addSkipped(basename($file));
             return $result;
         }
-
-        // Primary name
-//        $funcName = $function['name'][0];
 
         // Function short description.
         $description = $xpath->query('//span[@class="dc-title"]');
@@ -130,25 +119,37 @@ class Parser {
             $span = $xpath->query('./span[@class="type"]', $description);
             if ($span->length > 0 && !isset($function['return']['type'])) {
                 $parsedParams['ret_type'] = $span->item(0)->textContent;
-//                $parsedParams['ret_type'] = rewrite_names($span->item(0)->textContent);
             }
 
             // parameter containers
             $params = $xpath->query('span[@class="methodparam"]', $description);
+
             // skip empty parameter list (function declaration that doesn't take any parameter)
             if (/*$params->length != 1 && */$params->item(0)->textContent != 'void') {
                 $optional = substr_count($description->textContent, '[');
-                $paramDescriptions = $xpath->query('//div[contains(@class,"parameters")]//dd');
+                $allParameters = $xpath->query('//div[contains(@class,"parameters")]/dl/dt/code[@class="parameter"]');
 
                 for ($i = 0; $i < $params->length; $i++) {
                     $paramNodes = $xpath->query('*', $params->item($i));
                     $descPattern = './*[self::p or self::ul or self::blockquote or self::table or self::div[@class="methodsynopsis dc-description"]]';
 
+                    $paramDescriptions = null;
+                    $varName = $paramNodes->item(1)->textContent;
+
+                    foreach ($allParameters as $index => $paramDesc) {
+                        if (ltrim($varName, '$&') == $paramDesc->textContent) {
+                            $paramDescriptions = $xpath->query('//div[contains(@class,"parameters")]/dl/dd[' . ($index + 1) . ']');
+                            break;
+                        }
+                    }
+
+                    // var_dump($paramDescriptions->item(0)->textContent);
+
                     $param = array(
                         'type'  => $paramNodes->item(0) ? $paramNodes->item(0)->textContent : 'unknown', // type
-                        'var'   => $paramNodes->length >= 2 ? $paramNodes->item(1)->textContent : false, // variable name
+                        'var'   => $varName, // variable name
                         'beh'   => $params->length - $optional > $i ? 'required' : 'optional',
-                        'desc'  => Utils::extractFormattedText($xpath->query($descPattern, $paramDescriptions->item($i)), $xpath),
+                        'desc'  => $paramDescriptions ? Utils::extractFormattedText($xpath->query($descPattern, $paramDescriptions->item(0)), $xpath) : null,
                     );
                     if ($paramNodes->length >= 3) {
                         $param['default'] = trim($paramNodes->item(2)->textContent, ' =');
@@ -164,17 +165,16 @@ class Parser {
             return $result;
         }
 
-//        var_dump($function['params']);
-        $funcName = $function['params'][0]['name'];
+        $funcName = strtolower($function['params'][0]['name']);
 
         foreach ($function['params'] as $index => $param) {
             // For all alternative names use just a reference to the first name
-            $result->setResult($function['params'][$index]['name'], $index == 0 ? $function : $funcName);
+            $name = strtolower($function['params'][$index]['name']);
+            $result->setResult($name, $index == 0 ? $function : $funcName);
         }
 
         // parse all examples on the page
         if ($parseExamples != self::SKIP_EXAMPLES) {
-//            $examples = array();
             // grab all lang examples
             $exampleDiv = $xpath->query('//div[@class="example" or @class="informalexample"]');
             for ($i=0; $i < $exampleDiv->length; $i++) {
@@ -213,37 +213,9 @@ class Parser {
                 }
 
             }
-
-
-            // Keep examples in a seperate array or put it among other function params.
-
-
-//            if ($parseExamples == self::EXPORT_EXAMPLES) {
-//                $exportExamples[$file] = $examples;
-//            } elseif ($parseExamples == self::INCLUDE_EXAMPLES) {
-//                $function['examples'] = $examples;
-//            }
-//            $totalMethodsWithExamples++;
-//            }
         }
 
-
-
         return $result;
-
-        // add function into the final list
-//        if (isset($function['name']) && $function['name']) {
-//
-//            $functions[(isset($function['class']) ? $function['class'] . '::' : '') . $function['name']] = $function;
-//            $functionsCount++;
-//
-//            if ($showProgressbar && $functionsCount % 100 == 0) {
-//                echo '.';
-////                echo $functionsCount . PHP_EOL;
-//            }
-//        } else {
-//            echo $file . ": no method name found\n";
-//        }
     }
 
 }

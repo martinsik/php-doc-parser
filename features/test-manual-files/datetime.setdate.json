@@ -15,19 +15,19 @@
                     "type": "int",
                     "var": "$year",
                     "beh": "required",
-                    "desc": "Procedural style only: A DateTime object returned by date\\_create(). The function modifies this object."
+                    "desc": "Year of the date."
                 },
                 {
                     "type": "int",
                     "var": "$month",
                     "beh": "required",
-                    "desc": "Year of the date."
+                    "desc": "Month of the date."
                 },
                 {
                     "type": "int",
                     "var": "$day",
                     "beh": "required",
-                    "desc": "Month of the date."
+                    "desc": "Day of the date."
                 }
             ],
             "name": "DateTime::setDate",

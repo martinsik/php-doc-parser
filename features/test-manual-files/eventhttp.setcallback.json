@@ -26,7 +26,7 @@
                     "type": "string",
                     "var": "$arg",
                     "beh": "optional",
-                    "desc": "EventHttpRequest object."
+                    "desc": "Custom data."
                 }
             ],
             "name": "EventHttp::setCallback",

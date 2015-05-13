@@ -220,6 +220,8 @@ class RunCommand extends Command {
         $this->saveOutput($basePath, $functions);
         $this->output->writeln("Total functions: <info>" . count($functions) . "</info>");
 
+        $this->saveFunctionsList($basePath, $functions);
+
         if ($includeExamples == Parser::EXPORT_EXAMPLES) {
             $this->saveExamples($basePath, $examples);
             $this->output->writeln("Total examples: <info>" . $results->countAllExamples() . "</info>");
@@ -243,6 +245,18 @@ class RunCommand extends Command {
         file_put_contents($filePath, $json);
 
         $this->output->writeln("Saving JSON with examples to <info>${filePath}</info>");
+        $this->printJsonError();
+    }
+
+    private function saveFunctionsList($basePath, $functions) {
+        $normalized = array_map(function($name) {
+            return strtolower($name);
+        }, array_keys($functions));
+
+        $json = json_encode($normalized, $this->getJsonEncoderFlags());
+        $filePath = $basePath . '.list.json';
+        file_put_contents($filePath, $json);
+        $this->output->writeln("Saving list of all functions to <info>${filePath}</info>");
         $this->printJsonError();
     }
 
