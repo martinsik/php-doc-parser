@@ -1,0 +1,201 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN" "http://www.w3.org/TR/html4/loose.dtd">
+<html>
+ <head>
+  <meta http-equiv="content-type" content="text/html; charset=UTF-8">
+  <title>Replace all occurrences of the search string with the replacement string</title>
+
+ </head>
+ <body><div class="manualnavbar" style="text-align: center;">
+ <div class="prev" style="text-align: left; float: left;"><a href="function.str-repeat.html">str_repeat</a></div>
+ <div class="next" style="text-align: right; float: right;"><a href="function.str-rot13.html">str_rot13</a></div>
+ <div class="up"><a href="ref.strings.html">String Functions</a></div>
+ <div class="home"><a href="index.html">PHP Manual</a></div>
+</div><hr /><div id="function.str-replace" class="refentry">
+ <div class="refnamediv">
+  <h1 class="refname">str_replace</h1>
+  <p class="verinfo">(PHP 4, PHP 5)</p><p class="refpurpose"><span class="refname">str_replace</span> &mdash; <span class="dc-title">Replace all occurrences of the search string with the replacement string</span></p>
+
+ </div>
+ 
+ <div class="refsect1 description" id="refsect1-function.str-replace-description">
+  <h3 class="title">Description</h3>
+  <div class="methodsynopsis dc-description">
+   <span class="type"><a href="language.pseudo-types.html#language.types.mixed" class="type mixed">mixed</a></span> <span class="methodname"><strong>str_replace</strong></span>
+    ( <span class="methodparam"><span class="type"><a href="language.pseudo-types.html#language.types.mixed" class="type mixed">mixed</a></span> <code class="parameter">$search</code></span>
+   , <span class="methodparam"><span class="type"><a href="language.pseudo-types.html#language.types.mixed" class="type mixed">mixed</a></span> <code class="parameter">$replace</code></span>
+   , <span class="methodparam"><span class="type"><a href="language.pseudo-types.html#language.types.mixed" class="type mixed">mixed</a></span> <code class="parameter">$subject</code></span>
+   [, <span class="methodparam"><span class="type">int</span> <code class="parameter reference">&$count</code></span>
+  ] )</div>
+
+  <p class="para rdfs-comment">
+   This function returns a string or an array with all occurrences of
+   <code class="parameter">search</code> in <code class="parameter">subject</code>
+   replaced with the given <code class="parameter">replace</code> value.
+  </p>
+  <p class="para">
+   If you don&#039;t need fancy replacing rules (like regular expressions), you
+   should always use this function instead of <span class="function"><a href="function.preg-replace.html" class="function">preg_replace()</a></span>.
+  </p>
+ </div>
+
+
+ <div class="refsect1 parameters" id="refsect1-function.str-replace-parameters">
+  <h3 class="title">Parameters</h3>
+  <p class="para">
+   If <code class="parameter">search</code> and <code class="parameter">replace</code> are
+   arrays, then <span class="function"><strong>str_replace()</strong></span> takes a value from each array
+   and uses them to search and replace on <code class="parameter">subject</code>. If
+   <code class="parameter">replace</code> has fewer values than
+   <code class="parameter">search</code>, then an empty string is used for the rest of
+   replacement values. If <code class="parameter">search</code> is an array and
+   <code class="parameter">replace</code> is a string, then this replacement string is
+   used for every value of <code class="parameter">search</code>. The converse would
+   not make sense, though.
+  </p>
+  <p class="para">
+   If <code class="parameter">search</code> or <code class="parameter">replace</code>
+   are arrays, their elements are processed first to last.
+  </p>
+  <p class="para">
+   <dl>
+
+    
+     <dt>
+<code class="parameter">search</code></dt>
+
+     <dd>
+
+      <p class="para">
+       The value being searched for, otherwise known as the <em class="emphasis">needle</em>.
+       An array may be used to designate multiple needles.
+      </p>
+     </dd>
+
+    
+    
+     <dt>
+<code class="parameter">replace</code></dt>
+
+     <dd>
+
+      <p class="para">
+       The replacement value that replaces found <code class="parameter">search</code>
+       values. An array may be used to designate multiple replacements.
+      </p>
+     </dd>
+
+    
+    
+     <dt>
+<code class="parameter">subject</code></dt>
+
+     <dd>
+
+      <p class="para">
+       The string or array being searched and replaced on,
+       otherwise known as the <em class="emphasis">haystack</em>.
+      </p>
+      <p class="para">
+       If <code class="parameter">subject</code> is an array, then the search and
+       replace is performed with every entry of
+       <code class="parameter">subject</code>, and the return value is an array as
+       well.
+      </p>
+     </dd>
+
+    
+    
+     <dt>
+<code class="parameter">count</code></dt>
+
+     <dd>
+
+      <p class="para">
+       If passed, this will be set to the number of replacements performed.
+      </p>
+     </dd>
+
+    
+   </dl>
+
+  </p>
+ </div>
+
+
+ <div class="refsect1 returnvalues" id="refsect1-function.str-replace-returnvalues">
+  <h3 class="title">Return Values</h3>
+  <p class="para">
+   This function returns a string or an array with the replaced values.
+  </p>
+ </div>
+
+
+ <div class="refsect1 examples" id="refsect1-function.str-replace-examples">
+  <h3 class="title">Examples</h3>
+  <p class="para">
+   <div class="example" id="example-5332">
+    <p><strong>Example #1 Basic <span class="function"><strong>str_replace()</strong></span> examples</strong></p>
+    <div class="example-contents">
+<div class="phpcode"><code><span style="color: #000000">
+<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #FF8000">//&nbsp;Provides:&nbsp;&lt;body&nbsp;text='black'&gt;<br /></span><span style="color: #0000BB">$bodytag&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #0000BB">str_replace</span><span style="color: #007700">(</span><span style="color: #DD0000">"%body%"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"black"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"&lt;body&nbsp;text='%body%'&gt;"</span><span style="color: #007700">);<br /><br /></span><span style="color: #FF8000">//&nbsp;Provides:&nbsp;Hll&nbsp;Wrld&nbsp;f&nbsp;PHP<br /></span><span style="color: #0000BB">$vowels&nbsp;</span><span style="color: #007700">=&nbsp;array(</span><span style="color: #DD0000">"a"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"e"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"i"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"o"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"u"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"A"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"E"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"I"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"O"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"U"</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$onlyconsonants&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #0000BB">str_replace</span><span style="color: #007700">(</span><span style="color: #0000BB">$vowels</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">""</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"Hello&nbsp;World&nbsp;of&nbsp;PHP"</span><span style="color: #007700">);<br /><br /></span><span style="color: #FF8000">//&nbsp;Provides:&nbsp;You&nbsp;should&nbsp;eat&nbsp;pizza,&nbsp;beer,&nbsp;and&nbsp;ice&nbsp;cream&nbsp;every&nbsp;day<br /></span><span style="color: #0000BB">$phrase&nbsp;&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #DD0000">"You&nbsp;should&nbsp;eat&nbsp;fruits,&nbsp;vegetables,&nbsp;and&nbsp;fiber&nbsp;every&nbsp;day."</span><span style="color: #007700">;<br /></span><span style="color: #0000BB">$healthy&nbsp;</span><span style="color: #007700">=&nbsp;array(</span><span style="color: #DD0000">"fruits"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"vegetables"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"fiber"</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$yummy&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">=&nbsp;array(</span><span style="color: #DD0000">"pizza"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"beer"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"ice&nbsp;cream"</span><span style="color: #007700">);<br /><br /></span><span style="color: #0000BB">$newphrase&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #0000BB">str_replace</span><span style="color: #007700">(</span><span style="color: #0000BB">$healthy</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$yummy</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$phrase</span><span style="color: #007700">);<br /><br /></span><span style="color: #FF8000">//&nbsp;Provides:&nbsp;2<br /></span><span style="color: #0000BB">$str&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #0000BB">str_replace</span><span style="color: #007700">(</span><span style="color: #DD0000">"ll"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">""</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"good&nbsp;golly&nbsp;miss&nbsp;molly!"</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$count</span><span style="color: #007700">);<br />echo&nbsp;</span><span style="color: #0000BB">$count</span><span style="color: #007700">;<br /></span><span style="color: #0000BB">?&gt;</span>
+</span>
+</code></div>
+    </div>
+
+   </div>
+  </p>
+  <p class="para">
+   <div class="example" id="example-5333">
+    <p><strong>Example #2 Examples of potential <span class="function"><strong>str_replace()</strong></span> gotchas</strong></p>
+    <div class="example-contents">
+<div class="phpcode"><code><span style="color: #000000">
+<span style="color: #0000BB">&lt;?php<br /></span><span style="color: #FF8000">//&nbsp;Order&nbsp;of&nbsp;replacement<br /></span><span style="color: #0000BB">$str&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #DD0000">"Line&nbsp;1\nLine&nbsp;2\rLine&nbsp;3\r\nLine&nbsp;4\n"</span><span style="color: #007700">;<br /></span><span style="color: #0000BB">$order&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">=&nbsp;array(</span><span style="color: #DD0000">"\r\n"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"\n"</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">"\r"</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$replace&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #DD0000">'&lt;br&nbsp;/&gt;'</span><span style="color: #007700">;<br /><br /></span><span style="color: #FF8000">//&nbsp;Processes&nbsp;\r\n's&nbsp;first&nbsp;so&nbsp;they&nbsp;aren't&nbsp;converted&nbsp;twice.<br /></span><span style="color: #0000BB">$newstr&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #0000BB">str_replace</span><span style="color: #007700">(</span><span style="color: #0000BB">$order</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$replace</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$str</span><span style="color: #007700">);<br /><br /></span><span style="color: #FF8000">//&nbsp;Outputs&nbsp;F&nbsp;because&nbsp;A&nbsp;is&nbsp;replaced&nbsp;with&nbsp;B,&nbsp;then&nbsp;B&nbsp;is&nbsp;replaced&nbsp;with&nbsp;C,&nbsp;and&nbsp;so&nbsp;on...<br />//&nbsp;Finally&nbsp;E&nbsp;is&nbsp;replaced&nbsp;with&nbsp;F,&nbsp;because&nbsp;of&nbsp;left&nbsp;to&nbsp;right&nbsp;replacements.<br /></span><span style="color: #0000BB">$search&nbsp;&nbsp;</span><span style="color: #007700">=&nbsp;array(</span><span style="color: #DD0000">'A'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'B'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'C'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'D'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'E'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$replace&nbsp;</span><span style="color: #007700">=&nbsp;array(</span><span style="color: #DD0000">'B'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'C'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'D'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'E'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'F'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$subject&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #DD0000">'A'</span><span style="color: #007700">;<br />echo&nbsp;</span><span style="color: #0000BB">str_replace</span><span style="color: #007700">(</span><span style="color: #0000BB">$search</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$replace</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$subject</span><span style="color: #007700">);<br /><br /></span><span style="color: #FF8000">//&nbsp;Outputs:&nbsp;apearpearle&nbsp;pear<br />//&nbsp;For&nbsp;the&nbsp;same&nbsp;reason&nbsp;mentioned&nbsp;above<br /></span><span style="color: #0000BB">$letters&nbsp;</span><span style="color: #007700">=&nbsp;array(</span><span style="color: #DD0000">'a'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'p'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$fruit&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">=&nbsp;array(</span><span style="color: #DD0000">'apple'</span><span style="color: #007700">,&nbsp;</span><span style="color: #DD0000">'pear'</span><span style="color: #007700">);<br /></span><span style="color: #0000BB">$text&nbsp;&nbsp;&nbsp;&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #DD0000">'a&nbsp;p'</span><span style="color: #007700">;<br /></span><span style="color: #0000BB">$output&nbsp;&nbsp;</span><span style="color: #007700">=&nbsp;</span><span style="color: #0000BB">str_replace</span><span style="color: #007700">(</span><span style="color: #0000BB">$letters</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$fruit</span><span style="color: #007700">,&nbsp;</span><span style="color: #0000BB">$text</span><span style="color: #007700">);<br />echo&nbsp;</span><span style="color: #0000BB">$output</span><span style="color: #007700">;<br /></span><span style="color: #0000BB">?&gt;</span>
+</span>
+</code></div>
+    </div>
+
+   </div>
+  </p>
+ </div>
+
+
+ <div class="refsect1 notes" id="refsect1-function.str-replace-notes">
+  <h3 class="title">Notes</h3>
+  <blockquote class="note"><p><strong class="note">Note</strong>: <span class="simpara">This function is
+binary-safe.</span></p></blockquote>
+  <div class="caution"><strong class="caution">Caution</strong>
+   <h1 class="title">Replacement order gotcha</h1>
+   <p class="para">
+    Because <span class="function"><strong>str_replace()</strong></span> replaces left to right, it might
+    replace a previously inserted value when doing multiple replacements.
+    See also the examples in this document.
+   </p>
+  </div>
+  <blockquote class="note"><p><strong class="note">Note</strong>: 
+   <p class="para">
+    This function is case-sensitive. Use <span class="function"><a href="function.str-ireplace.html" class="function">str_ireplace()</a></span>
+    for case-insensitive replace.
+   </p>
+  </p></blockquote>
+ </div>
+
+
+ <div class="refsect1 seealso" id="refsect1-function.str-replace-seealso">
+  <h3 class="title">See Also</h3>
+  <p class="para">
+   <ul class="simplelist">
+    <li class="member"><span class="function"><a href="function.str-ireplace.html" class="function" rel="rdfs-seeAlso">str_ireplace()</a> - Case-insensitive version of str_replace.</span></li>
+    <li class="member"><span class="function"><a href="function.substr-replace.html" class="function" rel="rdfs-seeAlso">substr_replace()</a> - Replace text within a portion of a string</span></li>
+    <li class="member"><span class="function"><a href="function.preg-replace.html" class="function" rel="rdfs-seeAlso">preg_replace()</a> - Perform a regular expression search and replace</span></li>
+    <li class="member"><span class="function"><a href="function.strtr.html" class="function" rel="rdfs-seeAlso">strtr()</a> - Translate characters or replace substrings</span></li>
+   </ul>
+  </p>
+ </div>
+
+
+</div><hr /><div class="manualnavbar" style="text-align: center;">
+ <div class="prev" style="text-align: left; float: left;"><a href="function.str-repeat.html">str_repeat</a></div>
+ <div class="next" style="text-align: right; float: right;"><a href="function.str-rot13.html">str_rot13</a></div>
+ <div class="up"><a href="ref.strings.html">String Functions</a></div>
+ <div class="home"><a href="index.html">PHP Manual</a></div>
+</div></body></html>

@@ -1,0 +1,37 @@
+{
+    "desc": "Changes file owner.",
+    "long_desc": "Attempts to change the owner of the file `filename` to user `user`. Only the superuser may change the owner of a file.",
+    "ver": "PHP 4, PHP 5",
+    "ret_desc": "Returns TRUE on success or FALSE on failure.",
+    "seealso": [
+        "chmod", "chgrp"
+    ],
+    "filename": "function.chown",
+    "params": [
+        {
+            "name": "chown",
+            "list": [
+                {
+                    "type": "string",
+                    "var": "$filename",
+                    "beh": "required",
+                    "desc": "Path to the file."
+                },
+                {
+                    "type": "mixed",
+                    "var": "$user",
+                    "beh": "required",
+                    "desc": "A user name or number."
+                }
+            ],
+            "ret_type": "bool"
+        }
+    ],
+    "examples": [
+        {
+            "title": "Simple chown() usage",
+            "source": "\/\/ File name and username to use\n$file_name= \"foo.php\";\n$path = \"\/home\/sites\/php.net\/public_html\/sandbox\/\" . $file_name ;\n$user_name = \"root\";\n\n\/\/ Set the user\nchown($path, $user_name);\n\n\/\/ Check the result\n$stat = stat($path);\nprint_r(posix_getpwuid($stat['uid']));",
+            "output": "Array\n(\n    [name] => root\n    [passwd] => x\n    [uid] => 0\n    [gid] => 0\n    [gecos] => root\n    [dir] => \/root\n    [shell] => \/bin\/bash\n)"
+        }
+    ]
+}

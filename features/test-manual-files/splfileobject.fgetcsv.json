@@ -1,0 +1,51 @@
+{
+    "desc": "Gets line from file and parse as CSV fields.",
+    "long_desc": "Gets a line from the file which is in CSV format and returns an array containing the fields read.",
+    "ver": "PHP 5 >= 5.1.0",
+    "ret_desc": "Returns an indexed array containing the fields read, or FALSE on error.",
+    "seealso": [
+        "SplFileObject::setCsvControl", "SplFileObject::setFlags", "SplFileObject::READ_CSV", "SplFileObject::current"
+    ],
+    "filename": "splfileobject.fgetcsv",
+    "params": [
+        {
+            "name": "SplFileObject::fgetcsv",
+            "list": [
+                {
+                    "type": "string",
+                    "var": "$delimiter",
+                    "beh": "optional",
+                    "desc": "The field delimiter (one character only). Defaults as a comma or the value set using SplFileObject::setCsvControl().",
+                    "default": "\",\""
+                },
+                {
+                    "type": "string",
+                    "var": "$enclosure",
+                    "beh": "optional",
+                    "desc": "The field enclosure character (one character only). Defaults as a double quotation mark or the value set using SplFileObject::setCsvControl().",
+                    "default": "\"\\\"\""
+                },
+                {
+                    "type": "string",
+                    "var": "$escape",
+                    "beh": "optional",
+                    "desc": "The escape character (one character only). Defaults as a backslash (`\\`) or the value set using SplFileObject::setCsvControl().",
+                    "default": "\"\\\\\""
+                }
+            ],
+            "ret_type": "array"
+        }
+    ],
+    "examples": [
+        {
+            "title": "SplFileObject::fgetcsv() example",
+            "source": "$file = new SplFileObject(\"data.csv\");\nwhile (!$file->eof()) {\n    var_dump($file->fgetcsv());\n}",
+            "output": null
+        },
+        {
+            "title": "SplFileObject::READ_CSV example",
+            "source": "$file = new SplFileObject(\"animals.csv\");\n$file->setFlags(SplFileObject::READ_CSV);\nforeach ($file as $row) {\n    list($animal, $class, $legs) = $row;\n    printf(\"A %s is a %s with %d legs\\n\", $animal, $class, $legs);\n}",
+            "output": "A crocodile is a reptile with 4 legs\nA dolphin is a mammal with 0 legs\nA duck is a bird with 2 legs\nA koala is a mammal with 4 legs\nA salmon is a fish with 0 legs"
+        }
+    ]
+}

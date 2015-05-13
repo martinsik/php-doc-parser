@@ -1,0 +1,79 @@
+{
+    "desc": "Sets the date.",
+    "long_desc": "Resets the current date of the DateTime object to a different date.",
+    "ver": "PHP 5 >= 5.2.0",
+    "ret_desc": "Returns the DateTime object for method chaining or FALSE on failure.",
+    "seealso": [
+        "DateTime::setISODate",
+        "DateTime::setTime"
+    ],
+    "filename": "datetime.setdate",
+    "params": [
+        {
+            "list": [
+                {
+                    "type": "int",
+                    "var": "$year",
+                    "beh": "required",
+                    "desc": "Procedural style only: A DateTime object returned by date\\_create(). The function modifies this object."
+                },
+                {
+                    "type": "int",
+                    "var": "$month",
+                    "beh": "required",
+                    "desc": "Year of the date."
+                },
+                {
+                    "type": "int",
+                    "var": "$day",
+                    "beh": "required",
+                    "desc": "Month of the date."
+                }
+            ],
+            "name": "DateTime::setDate",
+            "ret_type": "DateTime"
+        },
+        {
+            "list": [
+                {
+                    "type": "DateTime",
+                    "var": "$object",
+                    "beh": "required",
+                    "desc": "Procedural style only: A DateTime object returned by date\\_create(). The function modifies this object."
+                },
+                {
+                    "type": "int",
+                    "var": "$year",
+                    "beh": "required",
+                    "desc": "Year of the date."
+                },
+                {
+                    "type": "int",
+                    "var": "$month",
+                    "beh": "required",
+                    "desc": "Month of the date."
+                },
+                {
+                    "type": "int",
+                    "var": "$day",
+                    "beh": "required",
+                    "desc": "Day of the date."
+                }
+            ],
+            "name": "date_date_set",
+            "ret_type": "DateTime"
+        }
+    ],
+    "examples": [
+        {
+            "title": "DateTime::setDate() example",
+            "source": "$date = new DateTime();\n$date->setDate(2001, 2, 3);\necho $date->format('Y-m-d');",
+            "output": "2001-02-03"
+        },
+        {
+            "title": "Values exceeding ranges are added to their parent values",
+            "source": "$date = new DateTime();\n\n$date->setDate(2001, 2, 28);\necho $date->format('Y-m-d') . \"\\n\";\n\n$date->setDate(2001, 2, 29);\necho $date->format('Y-m-d') . \"\\n\";\n\n$date->setDate(2001, 14, 3);\necho $date->format('Y-m-d') . \"\\n\";",
+            "output": "2001-02-28\n2001-03-01\n2002-02-03"
+        }
+    ]
+}

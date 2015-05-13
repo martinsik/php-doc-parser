@@ -1,0 +1,32 @@
+{
+    "name": "martinsik/php-doc-parser",
+    "homepage": "https://github.com/martinsik/php-doc-parser",
+    "description": "Parser for PHP documentation with CLI interface.",
+    "license": "MIT",
+    "require": {
+        "php": ">=5.4",
+        "symfony/console": "~2.6",
+        "symfony/filesystem": "~2.6",
+        "ext-curl": "*"
+    },
+    "require-dev": {
+        "behat/behat": "2.4.*@stable",
+        "phpunit/phpunit": "4.6.*"
+    },
+    "bin": [
+        "doc-parser"
+    ],
+    "config": {
+        "bin-dir": "bin/"
+    },
+    "autoload": {
+        "psr-4": {
+            "DocParser\\": ["src/"]
+        }
+    },
+    "autoload-dev": {
+        "files": [
+            "vendor/phpunit/phpunit/src/Framework/Assert/Functions.php"
+        ]
+    }
+}

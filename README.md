@@ -26,7 +26,7 @@ For more information about available parameters type: `php parser.php --help`.
 Output directory should contain three files:
 
   1. `database.json` - entire parsed documentation as JSON.
-  2. `stats.json` - contains 3 variables. `methods` and `examples` are just for debugging. The first one means the total number of functions/classes parsed from the source documentation and saved in `database.json`. `examples` is number of functions with code snippets. The last one `timestamp` means when was the `database.json` generated and is used to upgrade the Web SQL database when a new version of PHP Ninja Manual is released.
+  2. `stats.json` - contains 3 variables. `methods` and `examples` are just for debugging. The first one means the total number of functions/classes parsed from the source documentation and saved in `database.json`. `examples` is number of functions with lang snippets. The last one `timestamp` means when was the `database.json` generated and is used to upgrade the Web SQL database when a new version of PHP Ninja Manual is released.
   3. `functions.json` - one big array of all parsed functions (useful for autocomplete).
 
 ## What is it good for?
@@ -115,7 +115,6 @@ This is how `str_replace` looks like deep inside in [`output\en`](https://github
 
 ## Known limitations
 
-  * It's quiet memory demanding, `memory_limit=128M` should be enough.
   * There are no PHP statements (for, if, while, ...)
   * It's not able to recognize objective or procedural style in classes like in `mysqli`.
 

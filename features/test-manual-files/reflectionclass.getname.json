@@ -1,0 +1,24 @@
+{
+    "desc": "Gets class name.",
+    "long_desc": "Gets the class name.\\n\\nThis function is currently not documented; only its argument list is available.",
+    "ver": "PHP 5",
+    "ret_desc": "The class name.",
+    "seealso": [
+        "ReflectionClass::getNamespaceName"
+    ],
+    "filename": "reflectionclass.getname",
+    "params": [
+        {
+            "name": "ReflectionClass::getName",
+            "list": [],
+            "ret_type": "string"
+        }
+    ],
+    "examples": [
+        {
+            "title": "ReflectionClass::getName() example",
+            "source": "namespace A\\B;\n\nclass Foo { }\n\n$function = new \\ReflectionClass('stdClass');\n\nvar_dump($function->inNamespace());\nvar_dump($function->getName());\nvar_dump($function->getNamespaceName());\nvar_dump($function->getShortName());\n\n$function = new \\ReflectionClass('A\\\\B\\\\Foo');\n\nvar_dump($function->inNamespace());\nvar_dump($function->getName());\nvar_dump($function->getNamespaceName());\nvar_dump($function->getShortName());",
+            "output": "bool(false)\nstring(8) \"stdClass\"\nstring(0) \"\"\nstring(8) \"stdClass\"\n\nbool(true)\nstring(7) \"A\\B\\Foo\"\nstring(3) \"A\\B\"\nstring(3) \"Foo\""
+        }
+    ]
+}
