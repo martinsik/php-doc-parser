@@ -227,6 +227,19 @@ class RunCommand extends Command {
             $this->output->writeln("Total examples: <info>" . $results->countAllExamples() . "</info>");
         }
 
+        if ($this->output->isVerbose()) {
+            foreach ($results->getWarnings() as $funcName => $warnings) {
+                $this->output->writeln("<comment>Warning in ${funcName}</comment>");
+                foreach ($warnings as $warning) {
+                    $this->output->writeln($warning);
+                }
+            }
+        }
+        if ($this->output->isVeryVerbose()) {
+            foreach (array_keys($results->getSkipped()) as $filename) {
+                $this->output->writeln("<comment>Skipped ${filename}</comment>");
+            }
+        }
 //        $this->output->writeln("Total: <comment>${count}</comment> examples");
     }
 
