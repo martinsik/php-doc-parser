@@ -10,6 +10,8 @@ class Availability {
     const TD_PATTERN = 'tar.gz';
 
     /**
+     * Download and parse php.net/download-docs.php with all available languages
+     *
      * @return array Returns all found language => URL pairs available on php.net
      * @throws \Exception
      */

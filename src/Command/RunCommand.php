@@ -8,6 +8,7 @@ use DocParser\Parser;
 use DocParser\Utils;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
+use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -17,8 +18,19 @@ use Symfony\Component\Console\Question\Question;
 
 class RunCommand extends Command {
 
+    /**
+     * @var Availability
+     */
     private $avail;
+
+    /**
+     * @var array List of all available languages
+     */
     private $allLanguages;
+
+    /**
+     * @var QuestionHelper
+     */
     private $helper;
 
     /**
@@ -53,11 +65,15 @@ class RunCommand extends Command {
 
         $this->checkMemoryLimit();
 
+        // Download list of all available languages and let user choose what they want.
         $this->output->writeln('Downloading ' . Availability::DOWNLOADS_URL);
         $this->allLanguages = $this->avail->listPackages();
-
         $languages = $this->input->getOption('language') ? [$this->input->getOption('language')] : $this->chooseLanguages();
+
+        // Choose mirror.
         $mirror = $this->input->getOption('mirror') ?: $this->chooseMirror();
+
+        // Choose what to do with function examples.
         $includeExamples = $this->stringExamplesParamsToConst($this->input->getOption('examples') ?: $this->chooseIncludeExamples());
 
         if (in_array('all', $languages)) {
@@ -68,6 +84,7 @@ class RunCommand extends Command {
         $this->output->writeln('Selected language[s]: ' . implode(', ', array_map(function($lang) { return '<info>' . $lang . '</info>'; }, $langTitles)) . " from <info>${mirror}</info> mirror site.\n");
         $this->output->writeln('');
 
+        // Create output directory.
         $outDir = $this->input->getOption('out-dir');
         @mkdir($outDir, 0777, true);
         if (!is_dir($outDir)) {
@@ -78,6 +95,7 @@ class RunCommand extends Command {
             return 1;
         }
 
+        // Download, unpack and parse this language.
         $mirror = preg_replace('/^(http:\/\/|https:\/\/)/', '', $mirror);
         foreach ($languages as $code) {
             $package = new Package($code, $mirror);
