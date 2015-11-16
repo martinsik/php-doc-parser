@@ -1,5 +1,7 @@
 # PHP Documentation Parser
 
+[![Build Status](https://travis-ci.org/martinsik/php-doc-parser.svg?branch=master)](https://travis-ci.org/martinsik/php-doc-parser)
+
 This package downloads gziped documentation from php.net, parses it and outputs all found functions as JSON with Markdown syntax. It comes with CLI interface for comfortable usage. 
 
 [![](https://raw.githubusercontent.com/martinsik/php-doc-parser/master/doc/animation.gif)](https://raw.githubusercontent.com/martinsik/php-doc-parser/master/doc/animation.gif)
