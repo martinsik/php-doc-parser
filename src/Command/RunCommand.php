@@ -6,7 +6,6 @@ use DocParser\Availability;
 use DocParser\Package;
 use DocParser\Parser;
 use DocParser\Utils;
-use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Helper\ProgressBar;
 use Symfony\Component\Console\Helper\QuestionHelper;
 use Symfony\Component\Console\Input\InputArgument;
@@ -16,7 +15,7 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\Question;
 
-class RunCommand extends Command {
+class RunCommand extends ParserCommand {
 
     /**
      * @var Availability
@@ -53,7 +52,7 @@ class RunCommand extends Command {
             ->addOption('examples', 'e', InputOption::VALUE_REQUIRED, 's = skip, i = include, e = export')
             ->addOption('out-dir', 'o', InputOption::VALUE_REQUIRED, 'Output directory for parsed JSON manual', './output')
             ->addOption('tmp-dir', 't', InputOption::VALUE_REQUIRED, 'Directory for temporary files', sys_get_temp_dir())
-            ->addOption('pretty', null, InputOption::VALUE_NONE, 'Pretty print JSON output')
+            ->addOption('pretty', 'p', InputOption::VALUE_NONE, 'Pretty print JSON output')
         ;
     }
 
@@ -103,7 +102,6 @@ class RunCommand extends Command {
             $this->downloadPackage($package);
             $this->unpackPackage($package);
 
-//            $results = $this->process($unpackedDir, $includeExamples);
             $this->parse($package, $outDir, $includeExamples);
 
             $package->cleanup();
@@ -117,7 +115,6 @@ class RunCommand extends Command {
         $question = new ChoiceQuestion($msg, $choices, $default);
         $question->setAutocompleterValues(null);
 
-//        $languages = $this->languages;
         $question->setValidator(function($selected) use ($choices) {
             $selected = array_map(function($val) {
                 return trim($val);
@@ -153,16 +150,6 @@ class RunCommand extends Command {
         $question->setValidator(function($val) { return $val; });
 
         return $this->helper->ask($this->input, $this->output, $question);
-    }
-
-    private function stringExamplesParamsToConst($include) {
-        if ($include == 'i') {
-            return Parser::INCLUDE_EXAMPLES;
-        } elseif ($include == 'e') {
-            return Parser::EXPORT_EXAMPLES;
-        } else {
-            return Parser::SKIP_EXAMPLES;
-        }
     }
 
     private function downloadPackage(Package $package) {
@@ -258,7 +245,6 @@ class RunCommand extends Command {
                 $this->output->writeln("<comment>Skipped ${filename}</comment>");
             }
         }
-//        $this->output->writeln("Total: <comment>${count}</comment> examples");
     }
 
     private function saveOutput($basePath, $functions) {

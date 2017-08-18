@@ -29,8 +29,10 @@ require COMPOSER_AUTOLOAD_FILE;
 
 // Setup cli commands
 $runCmd = new \DocParser\Command\RunCommand();
+$singleCmd = new \DocParser\Command\SingleCommand();
 
 $application = new \Symfony\Component\Console\Application();
 $application->add($runCmd);
+$application->add($singleCmd);
 $application->setDefaultCommand($runCmd->getName());
 $application->run();

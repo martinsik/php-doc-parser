@@ -26,7 +26,7 @@ class Parser {
     /**
      * Process all files in the directory with selected by getFilesToProcess() method.
      *
-     * @param $dir Directory to search for files
+     * @param string $dir Directory to search for files
      * @param int $parseExamples Whether or not include also examples
      * @param callable $progressCallback Optional callback used to monitor progress
      * @return ParserResult Parse result including all warnings and skipped files
@@ -46,7 +46,7 @@ class Parser {
     }
 
     /**
-     * @param $dir Directory where we want to search files
+     * @param string $dir Directory where we want to search files
      * @return array
      */
     public function getFilesToProcess($dir) {
@@ -56,8 +56,8 @@ class Parser {
     /**
      * Process single file.
      *
-     * @param $file Source file
-     * @param $parseExamples Whether or not include also examples
+     * @param string $file Source file
+     * @param number $parseExamples Whether or not include also examples
      * @return ParserResult Parse result including all warnings and skipped files
      */
     public function processFile($file, $parseExamples, $result = null) {
