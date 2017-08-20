@@ -1,0 +1,45 @@
+{
+    "desc": "Computes the difference of arrays.",
+    "long_desc": "Compares `array1` against one or more other arrays and returns the values in `array1` that are not present in any of the other arrays.",
+    "ver": "PHP 4 >= 4.0.1, PHP 5",
+    "ret_desc": "Returns an array containing all the entries from array1 that are not present in any of the other arrays.",
+    "seealso": [
+        "array_diff_assoc",
+        "array_intersect",
+        "array_intersect_assoc"
+    ],
+    "filename": "function.array-diff",
+    "params": [
+        {
+            "name": "array_diff",
+            "list": [
+                {
+                    "type": "array",
+                    "var": "$array1",
+                    "beh": "required",
+                    "desc": "The array to compare from"
+                },
+                {
+                    "type": "array",
+                    "var": "$array2",
+                    "beh": "required",
+                    "desc": "An array to compare against"
+                },
+                {
+                    "type": "array",
+                    "var": "$...",
+                    "beh": "optional",
+                    "desc": "More arrays to compare against"
+                }
+            ],
+            "ret_type": "array"
+        }
+    ],
+    "examples": [
+        {
+            "title": "array_diff() example",
+            "source": "$array1 = array(\"a\" => \"green\", \"red\", \"blue\", \"red\");\n$array2 = array(\"b\" => \"green\", \"yellow\", \"red\");\n$result = array_diff($array1, $array2);\n\nprint_r($result);",
+            "output": "Array\n(\n    [1] => blue\n)"
+        }
+    ]
+}

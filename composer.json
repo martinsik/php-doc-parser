@@ -10,18 +10,15 @@
         "ext-curl": "*"
     },
     "require-dev": {
-        "behat/behat": "2.4.*@stable",
-        "phpunit/phpunit": "4.6.*"
+        "phpunit/phpunit": "~6.3"
     },
     "bin": [
         "doc-parser"
     ],
-    "config": {
-        "bin-dir": "bin/"
-    },
     "autoload": {
         "psr-4": {
-            "DocParser\\": ["src/"]
+            "DocParser\\": ["src/"],
+            "DocParser\\Tests\\": ["tests/"]
         }
     },
     "autoload-dev": {

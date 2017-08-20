@@ -7,8 +7,9 @@ use Symfony\Component\Console\Input\InputArgument;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
 use Symfony\Component\Console\Output\OutputInterface;
+use Symfony\Component\Console\Command\Command;
 
-class SingleCommand extends ParserCommand {
+class SingleCommand extends Command {
 
     /**
      * @var InputInterface;
@@ -35,7 +36,7 @@ class SingleCommand extends ParserCommand {
     protected function execute(InputInterface $input, OutputInterface $output)
     {
         $file = $input->getArgument('file');
-        $parseExamples = boolval($input->getOption('examples')) ? Parser::INCLUDE_EXAMPLES : 0;
+        $parseExamples = boolval($input->getOption('examples'));
 
         $outputFile = $input->getOption('output');
         $pretty = boolval($input->getOption('pretty'));
@@ -51,7 +52,7 @@ class SingleCommand extends ParserCommand {
         $funcName = $parserResult->getFuncNames()[0];
         $result = $parserResult->getResult($funcName);
 
-        if ($parseExamples === Parser::INCLUDE_EXAMPLES) {
+        if ($parseExamples) {
             $result['examples'] = $parserResult->getExamples($funcName);
         }
 

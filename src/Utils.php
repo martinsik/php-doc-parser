@@ -4,34 +4,15 @@ namespace DocParser;
 
 class Utils {
 
-    public static function simplifyString($str) {
+    public static function simplifyString($str)
+    {
         $str = preg_replace(array("/\n+/", "/ {2,}/"), ' ', $str);
         $str = trim($str);
         return $str;
     }
 
-//    public static function is_class($name) {
-//        if (strpos($name, '::') !== false || strpos($name, '->') !== false) {
-//            return true;
-//        } else {
-//            return false;
-//        }
-//    }
-
-//    public static function rewrite_names($name) {
-//        global $rewritename;
-//        $lname = strtolower($name);
-//        foreach ($rewritename as $pattern => $newName) {
-//            if (substr($lname, 0, strlen($pattern)) == $pattern) {
-//                $name = substr($newName, 0, strlen($pattern)) . substr($name, strlen($pattern));
-//            }
-//        }
-//        return $name;
-//    }
-
-
-
-    public static function clearSourceCode($source) {
+    public static function clearSourceCode($source)
+    {
         $source = trim(html_entity_decode(strip_tags(str_replace(array('<br />', '<br/>', '<br>'), "\n", $source))));
 
         if (substr($source, 0, 5) == '<?php') {
@@ -46,7 +27,8 @@ class Utils {
         return trim($source);
     }
 
-    public static function extractFormattedText($elms, $xpath = null) {
+    public static function extractFormattedText($elms, $xpath = null)
+    {
         $textParts = array();
 
         if ($elms->length == 0) {
@@ -94,7 +76,8 @@ class Utils {
         return self::simplifyString(implode('\n\n', $textParts));
     }
 
-    static public function convertSize($size) {
+    static public function convertSize($size)
+    {
         // http://stackoverflow.com/questions/11807115/php-convert-kb-mb-gb-tb-etc-to-bytes
         $number = substr($size, 0, -1);
         switch(strtoupper(substr($size,-1))){
@@ -108,15 +91,4 @@ class Utils {
                 return $size;
         }
     }
-
-//    static public function toFixedArray($array) {
-//        $fixed = \SplFixedArray::fromArray($array, true);
-//
-//        foreach ($fixed as $key => $value) {
-//            if (is_array($value)) {
-//                $fixed[$key] = self::toFixedArray($value);
-//            }
-//        }
-//        return $fixed;
-//    }
 }

@@ -6,32 +6,15 @@ use Symfony\Component\Filesystem\Filesystem;
 use DocParser\Utils;
 
 class Parser {
-
-    /**
-     * Don't parser examples at all
-     */
-    const SKIP_EXAMPLES = 0;
-
-    /**
-     * Parse examples and include them in function definitions
-     */
-    const INCLUDE_EXAMPLES = 1;
-
-    /**
-     * Parse examples but keep them in separate arrays
-     */
-    const EXPORT_EXAMPLES = 2;
-
-
     /**
      * Process all files in the directory with selected by getFilesToProcess() method.
      *
      * @param string $dir Directory to search for files
-     * @param int $parseExamples Whether or not include also examples
+     * @param boolean $parseExamples Whether or not include also examples
      * @param callable $progressCallback Optional callback used to monitor progress
      * @return ParserResult Parse result including all warnings and skipped files
      */
-    public function processDir($dir, $parseExamples = 0, \Closure $progressCallback = null) {
+    public function processDir($dir, $parseExamples = true, \Closure $progressCallback = null) {
         $results = new ParserResult();
         $files = $this->getFilesToProcess($dir);
         $processed = 0;
@@ -57,12 +40,16 @@ class Parser {
      * Process single file.
      *
      * @param string $file Source file
-     * @param number $parseExamples Whether or not include also examples
+     * @param boolean $parseExamples Whether or not include also examples
      * @return ParserResult Parse result including all warnings and skipped files
      */
-    public function processFile($file, $parseExamples, $result = null) {
+    public function processFile($file, $parseExamples = true, $result = null) {
         if (!$result) {
             $result = new ParserResult();
+        }
+
+        if (!file_exists($file)) {
+            throw new \Exception("File \"${file}\" doesn't exist.");
         }
 
         $dom = new \DOMDocument();
@@ -162,9 +149,9 @@ class Parser {
                     $paramDescriptions = null;
                     $varName = $paramNodes->item(1)->textContent;
 
-                    foreach ($allParameters as $index => $paramDesc) {
+                    foreach ($allParameters as $j => $paramDesc) {
                         if (ltrim($varName, '$&') == $paramDesc->textContent) {
-                            $paramDescriptions = $xpath->query('//div[contains(@class,"parameters")]/dl/dd[' . ($index + 1) . ']');
+                            $paramDescriptions = $xpath->query('//div[contains(@class,"parameters")]/dl/dd[' . ($j + 1) . ']');
                             break;
                         }
                     }
@@ -193,16 +180,21 @@ class Parser {
             return $result;
         }
 
-        $funcName = strtolower($function['params'][0]['name']);
 
+        // Find all possible names for this function
+        $names = [];
         foreach ($function['params'] as $index => $param) {
-            // Use all alternative names just as a reference to the first (primary) name.
-            $name = strtolower($function['params'][$index]['name']);
+            $names[] = strtolower($function['params'][$index]['name']);
+        }
+        $funcName = $names[0];
+
+        // Use all alternative names just as a reference to the first (primary) name.
+        foreach (array_unique($names) as $index => $name) {
             $result->setResult($name, $index == 0 ? $function : $funcName);
         }
 
         // Parse all examples in this file.
-        if ($parseExamples != self::SKIP_EXAMPLES) {
+        if ($parseExamples) {
             // Find all source code containers.
             $exampleDiv = $xpath->query('//div[@class="example" or @class="informalexample"]');
             for ($i=0; $i < $exampleDiv->length; $i++) {
@@ -245,5 +237,4 @@ class Parser {
 
         return $result;
     }
-
 }
