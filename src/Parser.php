@@ -2,9 +2,6 @@
 
 namespace DocParser;
 
-use Symfony\Component\Filesystem\Filesystem;
-use DocParser\Utils;
-
 class Parser {
     /**
      * Process all files in the directory with selected by getFilesToProcess() method.
@@ -14,12 +11,12 @@ class Parser {
      * @param callable $progressCallback Optional callback used to monitor progress
      * @return ParserResult Parse result including all warnings and skipped files
      */
-    public function processDir($dir, $parseExamples = true, \Closure $progressCallback = null) {
+    public function processDir($dir, $parseExamples = true, callable $progressCallback = null) {
         $results = new ParserResult();
         $files = $this->getFilesToProcess($dir);
         $processed = 0;
 
-        // Parse each file.
+        // Parse each file
         foreach ($files as $file) {
             $progressCallback(basename($file), count($files), $processed);
             $this->processFile($file, $parseExamples, $results);
@@ -41,6 +38,7 @@ class Parser {
      *
      * @param string $file Source file
      * @param boolean $parseExamples Whether or not include also examples
+     * @throws \Exception
      * @return ParserResult Parse result including all warnings and skipped files
      */
     public function processFile($file, $parseExamples = true, $result = null) {
@@ -59,7 +57,7 @@ class Parser {
 
         $function = [];
 
-        // Parse function name.
+        // Parse function name
         $h1 = $xpath->query('//h1[@class="refname"]');
 
         // Check if it managed to find function name.
@@ -68,7 +66,7 @@ class Parser {
             return $result;
         }
 
-        // Function short description.
+        // Function short description
         $description = $xpath->query('//span[@class="dc-title"]');
         if ($description->length > 0) { // some functions don't have any description
             $function['desc'] = trim(Utils::simplifyString($description->item(0)->textContent), '.') . '.';
@@ -83,7 +81,7 @@ class Parser {
             $function['long_desc'] = trim($function['long_desc'], '.') . '.';
         }
 
-        // PHP version since this function is available.
+        // PHP version since this function is available
         $version = $xpath->query('//p[@class="verinfo"]');
         if ($version->length > 0) { // check from which PHP version is it available
             $function['ver'] = trim($version->item(0)->textContent, '()');
@@ -121,7 +119,7 @@ class Parser {
         $function['params'] = [];
         $funcDescription = $xpath->query('//div[@class="refsect1 description"]/div[@class="methodsynopsis dc-description"]');
         foreach ($funcDescription as $index => $description) {
-            // Function name for this parameter list.
+            // Function name for this parameter list
             $altName = str_replace('->', '::', $xpath->query('./span[@class="methodname"]', $description)->item(0)->textContent);
             $parsedParams = [
                 'list' => [],
@@ -134,7 +132,7 @@ class Parser {
                 $parsedParams['ret_type'] = $span->item(0)->textContent;
             }
 
-            // Parameter containers.
+            // Parameter containers
             $params = $xpath->query('span[@class="methodparam"]', $description);
 
             // skip empty parameter list (function declaration that doesn't take any parameter)
@@ -156,13 +154,12 @@ class Parser {
                         }
                     }
 
-                    // Single parameter.
+                    // Single parameter
                     $param = array(
                         'type'  => $paramNodes->item(0) ? $paramNodes->item(0)->textContent : 'unknown', // type
                         'var'   => $varName, // variable name
                         'beh'   => $params->length - $optional > $i ? 'required' : 'optional', // required/optional
-                        // parameter description
-                        'desc'  => $paramDescriptions ? Utils::extractFormattedText($xpath->query($descPattern, $paramDescriptions->item(0)), $xpath) : null,
+                        'desc'  => $paramDescriptions ? Utils::extractFormattedText($xpath->query($descPattern, $paramDescriptions->item(0)), $xpath) : null, // parameter description
                     );
                     // Default value for this parameter
                     if ($paramNodes->length >= 3) {
@@ -188,14 +185,14 @@ class Parser {
         }
         $funcName = $names[0];
 
-        // Use all alternative names just as a reference to the first (primary) name.
+        // Use all alternative names just as a reference to the first (primary) name
         foreach (array_unique($names) as $index => $name) {
             $result->setResult($name, $index == 0 ? $function : $funcName);
         }
 
-        // Parse all examples in this file.
+        // Parse all examples in this file
         if ($parseExamples) {
-            // Find all source code containers.
+            // Find all source code containers
             $exampleDiv = $xpath->query('//div[@class="example" or @class="informalexample"]');
             for ($i=0; $i < $exampleDiv->length; $i++) {
                 $output = null;
@@ -206,11 +203,11 @@ class Parser {
                     $output = $xpath->query('.//div[@class="cdata"]', $exampleDiv->item($i))->item(0)->textContent;
                 }
 
-                // Example title, strip beginning and ending php tags.
+                // Example title, strip beginning and ending php tags
                 $ps = $xpath->query('p', $exampleDiv->item($i));
                 if ($ps->length > 0) {
                     $title = $ps->item(0)->textContent;
-                    // Remove some unnecessary stuff.
+                    // Remove some unnecessary stuff
                     $title = trim(preg_replace('/^(Example #\d+|Beispiel #\d+|Exemplo #\d+|Exemple #\d+|Przykład #\d+)/', '', $title));
                     $title = trim(preg_replace('/\s+/', ' ', $title));
                 } else {
@@ -223,7 +220,7 @@ class Parser {
                     'output' => trim($output) ?: null,
                 ];
 
-                // Skip examples with malformed UTF-8 characters.
+                // Skip examples with malformed UTF-8 characters
                 // @todo: check where's the problem
                 json_encode($example, JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE);
                 if (json_last_error()) {
