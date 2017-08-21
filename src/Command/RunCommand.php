@@ -16,7 +16,22 @@ use Symfony\Component\Console\Output\OutputInterface;
 use Symfony\Component\Console\Question\ChoiceQuestion;
 use Symfony\Component\Console\Question\Question;
 
-class RunCommand extends Command {
+class RunCommand extends Command
+{
+    /**
+     * Don't parser examples at all
+     */
+    const SKIP_EXAMPLES = 0;
+
+    /**
+     * Parse examples and include them in function definitions
+     */
+    const INCLUDE_EXAMPLES = 1;
+
+    /**
+     * Parse examples but keep them in separate arrays
+     */
+    const EXPORT_EXAMPLES = 2;
 
     /**
      * @var Availability
@@ -44,7 +59,8 @@ class RunCommand extends Command {
     private $output;
 
 
-    protected function configure() {
+    protected function configure()
+    {
         $this
             ->setName('parser:run')
             ->setDescription('Run interactive parser console')
@@ -53,11 +69,12 @@ class RunCommand extends Command {
             ->addOption('examples', 'e', InputOption::VALUE_REQUIRED, 's = skip, i = include, e = export')
             ->addOption('out-dir', 'o', InputOption::VALUE_REQUIRED, 'Output directory for parsed JSON manual', './output')
             ->addOption('tmp-dir', 't', InputOption::VALUE_REQUIRED, 'Directory for temporary files', sys_get_temp_dir())
-            ->addOption('pretty', null, InputOption::VALUE_NONE, 'Pretty print JSON output')
+            ->addOption('pretty', 'p', InputOption::VALUE_NONE, 'Pretty print JSON output')
         ;
     }
 
-    protected function execute(InputInterface $input, OutputInterface $output) {
+    protected function execute(InputInterface $input, OutputInterface $output)
+    {
         $this->avail = new Availability();
         $this->output = $output;
         $this->input = $input;
@@ -103,21 +120,20 @@ class RunCommand extends Command {
             $this->downloadPackage($package);
             $this->unpackPackage($package);
 
-//            $results = $this->process($unpackedDir, $includeExamples);
             $this->parse($package, $outDir, $includeExamples);
 
             $package->cleanup();
         }
     }
 
-    private function chooseLanguages() {
+    private function chooseLanguages()
+    {
         $default = 'en';
         $choices = array_merge(['all' => 'All'], $this->allLanguages);
         $msg = "Choose languages you want to download.\nUse comma to separate multiple languages (default: ${default}):";
         $question = new ChoiceQuestion($msg, $choices, $default);
         $question->setAutocompleterValues(null);
 
-//        $languages = $this->languages;
         $question->setValidator(function($selected) use ($choices) {
             $selected = array_map(function($val) {
                 return trim($val);
@@ -133,13 +149,15 @@ class RunCommand extends Command {
         return $this->helper->ask($this->input, $this->output, $question);
     }
 
-    private function chooseMirror() {
+    private function chooseMirror()
+    {
         $default = 'php.net';
         $question = new Question("Choose mirror site (default: ${default}): ", $default);
         return $this->helper->ask($this->input, $this->output, $question);
     }
 
-    private function chooseIncludeExamples() {
+    private function chooseIncludeExamples()
+    {
         $default = 'i';
         $choices = [
             'i' => 'Include examples',
@@ -155,17 +173,8 @@ class RunCommand extends Command {
         return $this->helper->ask($this->input, $this->output, $question);
     }
 
-    private function stringExamplesParamsToConst($include) {
-        if ($include == 'i') {
-            return Parser::INCLUDE_EXAMPLES;
-        } elseif ($include == 'e') {
-            return Parser::EXPORT_EXAMPLES;
-        } else {
-            return Parser::SKIP_EXAMPLES;
-        }
-    }
-
-    private function downloadPackage(Package $package) {
+    private function downloadPackage(Package $package)
+    {
         $url = $package->getUrl();
 
         preg_match('/\/(php_manual.*)\//U', $url, $matches);
@@ -190,14 +199,16 @@ class RunCommand extends Command {
         }
     }
 
-    public function unpackPackage(Package $package) {
+    public function unpackPackage(Package $package)
+    {
         $this->output->writeln('Unpacking <comment>' . $package->getOrigFilename() . '</comment> ...');
         $manualDir = $package->unpack();
         $this->output->writeln('Unpacked to <comment>' . $manualDir . "</comment>\n");
         return $manualDir;
     }
 
-    private function parse(Package $package, $outDir, $includeExamples) {
+    private function parse(Package $package, $outDir, $includeExamples = false)
+    {
         $parser = new Parser();
 
         $bar = $this->createProgressBar(count($parser->getFilesToProcess($package->getUnpackedDir())));
@@ -219,11 +230,11 @@ class RunCommand extends Command {
             $examplesRes = $results->getExamples($funcName);
 
             if ($examplesRes && is_array($arrayRes)) {
-                if ($includeExamples == Parser::INCLUDE_EXAMPLES) {
+                if ($includeExamples == RunCommand::INCLUDE_EXAMPLES) {
                     $arrayRes = array_merge($arrayRes, [
                         'examples' => $examplesRes
                     ]);
-                } elseif ($includeExamples == Parser::EXPORT_EXAMPLES) {
+                } elseif ($includeExamples == RunCommand::EXPORT_EXAMPLES) {
                     $examples[$funcName] = $examplesRes;
                 }
             }
@@ -240,7 +251,7 @@ class RunCommand extends Command {
 
         $this->saveFunctionsList($basePath, $functions);
 
-        if ($includeExamples == Parser::EXPORT_EXAMPLES) {
+        if ($includeExamples == RunCommand::EXPORT_EXAMPLES) {
             $this->saveExamples($basePath, $examples);
             $this->output->writeln("Total examples: <info>" . $results->countAllExamples() . "</info>");
         }
@@ -258,10 +269,10 @@ class RunCommand extends Command {
                 $this->output->writeln("<comment>Skipped ${filename}</comment>");
             }
         }
-//        $this->output->writeln("Total: <comment>${count}</comment> examples");
     }
 
-    private function saveOutput($basePath, $functions) {
+    private function saveOutput($basePath, $functions)
+    {
         $json = json_encode($functions, $this->getJsonEncoderFlags());
         $filePath = $basePath . '.json';
         file_put_contents($filePath, $json);
@@ -270,7 +281,8 @@ class RunCommand extends Command {
         $this->printJsonError();
     }
 
-    private function saveExamples($basePath, $examples) {
+    private function saveExamples($basePath, $examples)
+    {
         $json = json_encode($examples, $this->getJsonEncoderFlags());
         $filePath = $basePath . '.examples.json';
         file_put_contents($filePath, $json);
@@ -279,7 +291,8 @@ class RunCommand extends Command {
         $this->printJsonError();
     }
 
-    private function saveFunctionsList($basePath, $functions) {
+    private function saveFunctionsList($basePath, $functions)
+    {
         $normalized = array_map(function($name) {
             return strtolower($name);
         }, array_keys($functions));
@@ -291,17 +304,20 @@ class RunCommand extends Command {
         $this->printJsonError();
     }
 
-    private function getTmpDir() {
+    private function getTmpDir()
+    {
         return ($this->input->getOption('tmp-dir') ?: sys_get_temp_dir());
     }
 
-    private function printJsonError() {
+    private function printJsonError()
+    {
         if (json_last_error()) {
             $this->output->writeln('<error>' . json_last_error_msg() . '</error>');
         }
     }
 
-    private function checkMemoryLimit() {
+    private function checkMemoryLimit()
+    {
         $memLimit = ini_get('memory_limit');
         $minimumRequired = 128;
         $bytes = Utils::convertSize(ini_get('memory_limit'));
@@ -311,7 +327,8 @@ class RunCommand extends Command {
         }
     }
 
-    private function createProgressBar($max = 100) {
+    private function createProgressBar($max = 100)
+    {
         $bar = new ProgressBar($this->output, $max);
         $bar->setBarCharacter('<info>#</info>');
         $bar->setProgressCharacter('<info>#</info>');
@@ -319,8 +336,18 @@ class RunCommand extends Command {
         return $bar;
     }
 
-    private function getJsonEncoderFlags() {
+    private function getJsonEncoderFlags()
+    {
         return ($this->input->getOption('pretty') ? JSON_PRETTY_PRINT : 0) | JSON_NUMERIC_CHECK | JSON_UNESCAPED_UNICODE;
     }
 
+    private function stringExamplesParamsToConst($include) {
+        if ($include == 'i') {
+            return self::INCLUDE_EXAMPLES;
+        } elseif ($include == 'e') {
+            return self::EXPORT_EXAMPLES;
+        } else {
+            return self::SKIP_EXAMPLES;
+        }
+    }
 }

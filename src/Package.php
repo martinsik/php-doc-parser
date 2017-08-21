@@ -15,20 +15,26 @@ class Package {
 
     const ARCHIVE_INNER_DIR = 'php-chunked-xhtml';
 
-    public function __construct($lang, $mirror) {
+    public function __construct($lang, $mirror)
+    {
         $this->lang = $lang;
         $this->mirror = $mirror;
     }
 
-    public function download($filePath, $progressCallback = null) {
-        $this->filePath = $filePath;
+    public function download($filePath = null, $progressCallback = null)
+    {
+        if (!$filePath) {
+            $tmpDir = $this->getTmpDir();
+            $filePath = $tmpDir . DIRECTORY_SEPARATOR . $this->getOrigFilename();
+            @mkdir($tmpDir);
+        }
 
         $ch = curl_init();
         curl_setopt($ch, CURLOPT_URL, $this->getUrl());
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_HEADER, false);
         curl_setopt($ch, CURLOPT_FOLLOWLOCATION, true);
-        $f = fopen($this->filePath, 'w+');
+        $f = fopen($filePath, 'w+');
         curl_setopt($ch, CURLOPT_FILE, $f);
         if ($progressCallback) {
             curl_setopt($ch, CURLOPT_PROGRESSFUNCTION, $progressCallback);
@@ -39,13 +45,17 @@ class Package {
 
         fclose($f);
 
-        $this->isPackageFileValid();
+        $this->isPackageFileValid($filePath);
 
+        $this->filePath = $filePath;
         $this->cleanupFiles[] = $this->filePath;
+
+        return $filePath;
     }
 
-    public function unpack($files = []) {
-        $this->isPackageFileValid();
+    public function unpack($files = [])
+    {
+        $this->isPackageFileValid($this->filePath);
 
         // decompress from gz
         $tarFile = str_replace('.tar.gz', '.tar', $this->filePath);
@@ -65,44 +75,57 @@ class Package {
         return $this->unpackedDir;
     }
 
-    public function cleanup() {
+    public function cleanup()
+    {
         $fs = new Filesystem();
 
         try {
             $fs->remove($this->cleanupFiles);
-        } catch (IOExceptionInterface $e) {
-            new IOException("Unable to remove files/directories: " . implode(', ', $this->cleanupFiles));
+        } catch (IOException $e) {
+            throw new IOException("Unable to remove files/directories: " . implode(', ', $this->cleanupFiles));
         }
     }
 
-    private function isPackageFileValid() {
-        if (!file_exists($this->filePath)) {
-            throw new \Exception('File "' . $this->filePath . '" doesn\'t exist. Did you call Package::download() before Package::unpack()?');
+    private function isPackageFileValid($filePath)
+    {
+        if (!file_exists($filePath)) {
+            throw new \Exception('File "' . $filePath . '" doesn\'t exist. Did you call Package::download() before Package::unpack()?');
         }
 
-        if (0 == filesize($this->filePath)) {
-            throw new \Exception('File "' . $this->filePath . '" has 0 length. You might have a wrong mirror site or language file. ' .
+        if (0 == filesize($filePath)) {
+            throw new \Exception('File "' . $filePath . '" has 0 length. You might have a wrong mirror site or language file. ' .
                 'Try opening this this URL in a browser: ' . $this->getUrl());
         }
     }
 
-    public function getUrl() {
+    private function getTmpDir()
+    {
+        $dir = sys_get_temp_dir() . DIRECTORY_SEPARATOR . 'php-doc-parser-test';
+        return $dir;
+    }
+
+    public function getUrl()
+    {
         return 'http://' . $this->mirror . '/get/' . $this->getOrigFilename() . '/from/this/mirror';
     }
 
-    public function getOrigFilename() {
+    public function getOrigFilename()
+    {
         return 'php_manual_' . $this->lang . '.tar.gz';
     }
 
-    public function getLang() {
+    public function getLang()
+    {
         return $this->lang;
     }
 
-    public function getMirror() {
+    public function getMirror()
+    {
         return $this->mirror;
     }
 
-    public function getUnpackedDir() {
+    public function getUnpackedDir()
+    {
         return $this->unpackedDir;
     }
 }

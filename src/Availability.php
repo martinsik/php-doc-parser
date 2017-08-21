@@ -16,14 +16,7 @@ class Availability {
      * @throws \Exception
      */
     public function listPackages() {
-        $curl = curl_init(self::DOWNLOADS_URL);
-        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-        $response = curl_exec($curl);
-
-        $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
-        if (200 != $statusCode) {
-            throw new \Exception("Invalid status lang ${statusCode} for page " . self::DOWNLOADS_URL);
-        }
+        $response = $this->download();
 
         $dom = new \DOMDocument();
         @$dom->loadHTML($response);
@@ -60,6 +53,19 @@ class Availability {
             }
         }
         return $langs;
+    }
+
+    private function download() {
+        $curl = curl_init(self::DOWNLOADS_URL);
+        curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+        $response = curl_exec($curl);
+
+        $statusCode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+        if (200 != $statusCode) {
+            throw new \Exception("Invalid status lang ${statusCode} for page " . self::DOWNLOADS_URL);
+        }
+
+        return $response;
     }
 
 }
